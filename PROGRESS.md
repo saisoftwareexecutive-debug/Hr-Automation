@@ -16,7 +16,7 @@
 **Last updated:** 2026-11-14 15:30 IST  
 **Backup:** HR AUTOMATION BACKUP 8 ✅  
 **Repository:** https://github.com/saisoftwareexecutive-debug/Hr-Automation.git (main)  
-**Tests:** 64/64 passing across 10 test files (`npm test`) ✅  
+**Tests:** 68/68 passing across 11 test files (`npm test`) ✅  
 **Guard:** 0 leaks or prohibited files tracked (`npm run guard`) ✅  
 **Build:** Passes cleanly (`npm run build` — 29/29 routes generated) ✅  
 
@@ -35,4 +35,6 @@
 | **Real User Accounts** | ✅ Configured | Alex (Admin), Pallavi Mali (HR Exec), Shradha Yadav (HR Exec) provisioned with bcrypt hashes and forced first-login password change. Zero demo profiles. |
 | **Fair-Hiring Rule** | ✅ Preserved | 100% compliant: zero filtering, scoring, or ranking by religion, caste, gender, age, marital status, or names. |
 | **Brand Single Source of Truth** | ✅ Enforced | `src/lib/brand.ts` with typographic apostrophe (`’`), derived favicons and PWA icons regenerated from official logo. |
-| **Cloud Deployment & CI** | 🔄 In Progress | GitHub workflow `.github/workflows/ci.yml`, pre-flight security guard `scripts/guard.mjs`, and Supabase data layer parity. |
+| **Phase A: Git, GitHub & CI** | ✅ Completed | Pushed to GitHub `main` (`28e0a6c`) with tag `v0.1.0`. Fresh clone verified (0 forbidden files, 64/64 tests pass, production build clean, port 3100 server returns 200 with official brand). GitHub Actions CI verified: status `completed`, conclusion `success`. |
+| **Phase B: Supabase Data Layer** | ✅ Completed | Full parity migration `003_cloud_parity_schema.sql` (users, attempts, settings, templates, batches, workflow, RLS). Repository layer `src/lib/db/supabaseRepo.ts` with transparent dispatch. Added `supabaseParity.test.ts` (68/68 passing). |
+| **Phase C: Serverless Readiness** | 🔄 In Progress | Zero-disk-write checks under cloud mode, rate limiting, and HTTP security headers. |

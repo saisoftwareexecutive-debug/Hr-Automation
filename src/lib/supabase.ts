@@ -10,6 +10,10 @@ export const isSupabaseConfigured = Boolean(
   (supabaseAnonKey || supabaseServiceKey)
 );
 
+export function isCloudMode(): boolean {
+  return process.env.DATA_STORAGE_MODE === 'supabase' && isSupabaseConfigured;
+}
+
 // Client for public / browser queries (respects RLS)
 export const supabasePublic = isSupabaseConfigured
   ? createClient(supabaseUrl, supabaseAnonKey || supabaseServiceKey)

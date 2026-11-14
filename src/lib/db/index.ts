@@ -43,6 +43,8 @@ import { generateUUID } from '../id';
 import { ImportBatch } from '@/types';
 import { validateJobInput } from '../validation';
 import { COMPANY_NAME, COMPANY_TAGLINE } from '../brand';
+import { isCloudMode } from '../supabase';
+import * as cloudRepo from './supabaseRepo';
 
 interface DatabaseSchema {
   jobs: Job[];
@@ -308,11 +310,17 @@ export function saveLocalDb(db: DatabaseSchema): void {
 // JOBS REPOSITORY
 // -------------------------------------------------------------
 export async function getJobs(): Promise<Job[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getJobs();
+  }
   const db = getLocalDb();
   return db.jobs;
 }
 
 export async function getJobById(id: string): Promise<Job | null> {
+  if (isCloudMode()) {
+    return cloudRepo.getJobById(id);
+  }
   const db = getLocalDb();
   return db.jobs.find((j) => j.id === id) || null;
 }
@@ -340,6 +348,10 @@ export async function createJob(jobData: Omit<Job, 'id' | 'created_at'>): Promis
   });
   if (!validation.valid) {
     throw new Error(validation.error);
+  }
+
+  if (isCloudMode()) {
+    return cloudRepo.createJob(jobData);
   }
 
   const db = getLocalDb();
@@ -389,6 +401,9 @@ export async function createJob(jobData: Omit<Job, 'id' | 'created_at'>): Promis
 }
 
 export async function updateJob(id: string, updates: Partial<Job>): Promise<Job | null> {
+  if (isCloudMode()) {
+    return cloudRepo.updateJob(id, updates);
+  }
   const db = getLocalDb();
   const index = db.jobs.findIndex((j) => j.id === id);
   if (index === -1) return null;
@@ -423,6 +438,9 @@ export async function updateJob(id: string, updates: Partial<Job>): Promise<Job 
 }
 
 export async function closeJob(jobId: string, adminEmail: string): Promise<Job | null> {
+  if (isCloudMode()) {
+    return cloudRepo.closeJob(jobId, adminEmail);
+  }
   const db = getLocalDb();
   const index = db.jobs.findIndex((j) => j.id === jobId);
   if (index === -1) return null;
@@ -443,6 +461,9 @@ export async function deleteJob(
   jobId: string,
   options: { deleteApplicants?: boolean; adminEmail: string }
 ): Promise<{ success: boolean; error?: string; deletedJob?: Job; deletedApplications?: Application[] }> {
+  if (isCloudMode()) {
+    return cloudRepo.deleteJob(jobId, options);
+  }
   const db = getLocalDb();
   const jobIndex = db.jobs.findIndex((j) => j.id === jobId);
   if (jobIndex === -1) {
@@ -494,6 +515,9 @@ export async function restoreJob(
   backup: { job: Job; applications?: Application[] },
   adminEmail: string
 ): Promise<boolean> {
+  if (isCloudMode()) {
+    return cloudRepo.restoreJob(backup, adminEmail);
+  }
   const db = getLocalDb();
   if (db.jobs.some((j) => j.id === backup.job.id)) {
     return false;
@@ -515,6 +539,9 @@ export async function restoreJob(
 }
 
 export async function updateScoringRules(jobId: string, rules: Partial<ScoringRules>): Promise<ScoringRules | null> {
+  if (isCloudMode()) {
+    return cloudRepo.updateScoringRules(jobId, rules);
+  }
   const db = getLocalDb();
   const jobIndex = db.jobs.findIndex((j) => j.id === jobId);
   if (jobIndex === -1) return null;
@@ -577,6 +604,9 @@ export async function getCandidates(filters?: {
   minScore?: number;
   city?: string;
 }): Promise<Application[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getCandidates(filters);
+  }
   const db = getLocalDb();
   let results = db.applications.map((app) => {
     let candidate = db.candidates.find((c) => c.id === app.candidate_id);
@@ -633,6 +663,9 @@ export async function getCandidates(filters?: {
 export const getApplications = getCandidates;
 
 export async function getApplicationById(id: string): Promise<Application | null> {
+  if (isCloudMode()) {
+    return cloudRepo.getApplicationById(id);
+  }
   const db = getLocalDb();
   const app = db.applications.find((a) => a.id === id);
   if (!app) return null;
@@ -650,6 +683,9 @@ export async function getApplicationById(id: string): Promise<Application | null
 }
 
 export async function getApplicationByToken(token: string): Promise<Application | null> {
+  if (isCloudMode()) {
+    return cloudRepo.getApplicationByToken(token);
+  }
   const db = getLocalDb();
   const app = db.applications.find((a) => a.token === token);
   if (!app) return null;
@@ -667,6 +703,9 @@ export async function getApplicationByToken(token: string): Promise<Application 
 }
 
 export async function saveImportedApplications(apps: Application[]): Promise<void> {
+  if (isCloudMode()) {
+    return cloudRepo.saveImportedApplications(apps);
+  }
   const db = getLocalDb();
 
   for (const newApp of apps) {
@@ -705,6 +744,9 @@ export async function updateApplicationStatus(
   reason?: string,
   changedBy: string = 'HR Team'
 ): Promise<Application | null> {
+  if (isCloudMode()) {
+    return cloudRepo.updateApplicationStatus(applicationId, newStatus, changedBy, reason);
+  }
   const db = getLocalDb();
   const index = db.applications.findIndex((a) => a.id === applicationId);
   if (index === -1) return null;
@@ -746,6 +788,9 @@ export async function submitCandidateForm(
   token: string,
   answersData: Omit<FormAnswers, 'id' | 'application_id' | 'submitted_at'>
 ): Promise<{ success: boolean; score: number; error?: string }> {
+  if (isCloudMode()) {
+    return cloudRepo.submitCandidateForm(token, answersData);
+  }
   const db = getLocalDb();
   const appIndex = db.applications.findIndex((a) => a.token === token);
   if (appIndex === -1) {
@@ -825,6 +870,9 @@ export async function addCandidateNote(
   noteText: string,
   authorName: string = 'HR Executive'
 ): Promise<CandidateNote> {
+  if (isCloudMode()) {
+    return cloudRepo.addCandidateNote(applicationId, candidateId, noteText, authorName);
+  }
   const db = getLocalDb();
   const note: CandidateNote = {
     id: `note_${Date.now()}`,
@@ -849,6 +897,9 @@ export async function assignApplications(
   userName: string,
   adminEmail: string
 ): Promise<{ success: boolean; count: number }> {
+  if (isCloudMode()) {
+    return cloudRepo.assignApplications(applicationIds, userId, userName, adminEmail);
+  }
   const db = getLocalDb();
   let updatedCount = 0;
 
@@ -879,6 +930,9 @@ export async function autoSplitApplications(
   adminEmail: string,
   targetUserIds?: { id: string; name: string }[]
 ): Promise<{ success: boolean; assignments: Record<string, number> }> {
+  if (isCloudMode()) {
+    return cloudRepo.autoSplitApplications(applicationIds, adminEmail, targetUserIds);
+  }
   const db = getLocalDb();
   const execs = targetUserIds && targetUserIds.length > 0
     ? targetUserIds
@@ -923,6 +977,9 @@ export async function recordCallOutcome(data: {
   authorName: string;
   authorEmail: string;
 }): Promise<Application> {
+  if (isCloudMode()) {
+    return cloudRepo.recordCallOutcome(data);
+  }
   const db = getLocalDb();
   const app = db.applications.find((a) => a.id === data.applicationId);
   if (!app) throw new Error('Application not found');
@@ -1001,6 +1058,9 @@ export async function getDailyProgress(dateStr?: string): Promise<{
   teamTarget: number;
   userStats: DailyProgress[];
 }> {
+  if (isCloudMode()) {
+    return cloudRepo.getDailyProgress(dateStr);
+  }
   const db = getLocalDb();
   const settings = db.companySettings || INITIAL_SETTINGS;
   const targetDate = dateStr || new Date().toISOString().slice(0, 10);
@@ -1055,11 +1115,17 @@ export async function getDailyProgress(dateStr?: string): Promise<{
 }
 
 export async function getCandidateNotes(applicationId: string): Promise<CandidateNote[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getCandidateNotes(applicationId);
+  }
   const db = getLocalDb();
   return db.candidateNotes.filter((n) => n.application_id === applicationId);
 }
 
 export async function logWhatsAppOrSmsMessage(logItem: Omit<MessageLogItem, 'id' | 'sent_at'>): Promise<MessageLogItem> {
+  if (isCloudMode()) {
+    return cloudRepo.logWhatsAppOrSmsMessage(logItem);
+  }
   const db = getLocalDb();
   const item: MessageLogItem = {
     ...logItem,
@@ -1072,11 +1138,17 @@ export async function logWhatsAppOrSmsMessage(logItem: Omit<MessageLogItem, 'id'
 }
 
 export async function getStatusHistory(applicationId: string): Promise<StatusHistoryItem[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getStatusHistory(applicationId);
+  }
   const db = getLocalDb();
   return db.statusHistory.filter((sh) => sh.application_id === applicationId);
 }
 
 export async function getAuditLogs(): Promise<AuditLogItem[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getAuditLogs();
+  }
   const db = getLocalDb();
   return db.auditLogs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
@@ -1088,6 +1160,10 @@ export async function logAuditEvent(
   entityId?: string,
   details?: Record<string, any>
 ): Promise<void> {
+  if (isCloudMode()) {
+    await cloudRepo.logAuditEvent(userEmail, action, entityType, entityId, details);
+    return;
+  }
   const db = getLocalDb();
   const entry: AuditLogItem = {
     id: `aud_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -1110,6 +1186,9 @@ export async function logAuditEvent(
  * Candidate Right to Erasure (Delete all personal data on verified request)
  */
 export async function deleteCandidateData(candidateId: string, adminEmail: string): Promise<boolean> {
+  if (isCloudMode()) {
+    return cloudRepo.deleteCandidateData(candidateId, adminEmail);
+  }
   const db = getLocalDb();
   const cand = db.candidates.find((c) => c.id === candidateId);
   if (!cand) return false;
@@ -1136,6 +1215,9 @@ export async function deleteCandidates(
   candidateIds: string[],
   adminEmail: string
 ): Promise<{ success: boolean; count: number; deleted?: { candidates: Candidate[]; applications: Application[] } }> {
+  if (isCloudMode()) {
+    return cloudRepo.deleteCandidates(candidateIds, adminEmail);
+  }
   const db = getLocalDb();
   const idSet = new Set(candidateIds);
 
@@ -1175,6 +1257,9 @@ export async function restoreCandidates(
   backup: { candidates: Candidate[]; applications: Application[] },
   adminEmail: string
 ): Promise<boolean> {
+  if (isCloudMode()) {
+    return cloudRepo.restoreCandidates(backup, adminEmail);
+  }
   const db = getLocalDb();
 
   const existingCandIds = new Set(db.candidates.map((c) => c.id));
@@ -1200,6 +1285,9 @@ export async function deleteNote(
   noteId: string,
   user: { email: string; role: string }
 ): Promise<boolean> {
+  if (isCloudMode()) {
+    return cloudRepo.deleteNote(noteId, user.email);
+  }
   const db = getLocalDb();
   const noteIndex = (db.candidateNotes || []).findIndex((n) => n.id === noteId);
   if (noteIndex === -1) return false;
@@ -1228,6 +1316,10 @@ export async function deleteTemplateVersion(
   templateId: string,
   adminEmail: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (isCloudMode()) {
+    const ok = await cloudRepo.deleteTemplateVersion(templateId, adminEmail);
+    return { success: ok };
+  }
   const db = getLocalDb();
   const index = (db.templates || []).findIndex((t) => t.id === templateId);
   if (index === -1) {
@@ -1260,6 +1352,10 @@ export async function deleteUser(
   userId: string,
   adminEmail: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (isCloudMode()) {
+    const ok = await cloudRepo.deleteUser(userId, adminEmail);
+    return ok ? { success: true } : { success: false, error: 'User not found or deletion failed' };
+  }
   const db = getLocalDb();
   const userIndex = (db.users || []).findIndex((u) => u.id === userId);
   if (userIndex === -1) {
@@ -1307,11 +1403,17 @@ export async function deleteUser(
 }
 
 export async function getImportBatches(): Promise<ImportBatch[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getImportBatches();
+  }
   const db = getLocalDb();
   return db.importBatches || [];
 }
 
 export async function recordImportBatch(batch: ImportBatch): Promise<void> {
+  if (isCloudMode()) {
+    return cloudRepo.recordImportBatch(batch);
+  }
   const db = getLocalDb();
   if (!db.importBatches) db.importBatches = [];
   db.importBatches.unshift(batch);
@@ -1325,6 +1427,10 @@ export async function deleteImportBatch(
   batchId: string,
   adminEmail: string
 ): Promise<{ success: boolean; count: number }> {
+  if (isCloudMode()) {
+    const res = await cloudRepo.deleteImportBatch(batchId, adminEmail);
+    return { success: res.success, count: res.deletedCount };
+  }
   const db = getLocalDb();
   const batchIndex = (db.importBatches || []).findIndex((b) => b.id === batchId);
   const batch = batchIndex !== -1 ? db.importBatches![batchIndex] : null;
@@ -1362,16 +1468,25 @@ export async function deleteImportBatch(
 // USER MANAGEMENT & AUTHENTICATION REPOSITORY
 // -------------------------------------------------------------
 export async function getUsers(): Promise<Omit<User, 'password_hash'>[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getUsers();
+  }
   const db = getLocalDb();
   return (db.users || []).map(({ password_hash, ...rest }) => rest);
 }
 
 export async function getUserById(id: string): Promise<User | null> {
+  if (isCloudMode()) {
+    return cloudRepo.getUserById(id);
+  }
   const db = getLocalDb();
   return db.users?.find((u) => u.id === id) || null;
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
+  if (isCloudMode()) {
+    return cloudRepo.getUserByEmail(email);
+  }
   const db = getLocalDb();
   return db.users?.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
 }
@@ -1380,6 +1495,18 @@ export async function createUser(
   data: { email: string; full_name: string; role: UserRole; temporaryPassword?: string },
   adminEmail: string
 ): Promise<{ user: Omit<User, 'password_hash'>; tempPassword: string }> {
+  if (isCloudMode()) {
+    const res = await cloudRepo.createUser(
+      {
+        email: data.email,
+        fullName: data.full_name,
+        role: data.role,
+        temporaryPassword: data.temporaryPassword,
+      },
+      adminEmail
+    );
+    return { user: res.user, tempPassword: res.temporaryPassword };
+  }
   const db = getLocalDb();
   const existing = db.users.find((u) => u.email.toLowerCase() === data.email.toLowerCase());
   if (existing) {
@@ -1419,6 +1546,11 @@ export async function updateUser(
   updates: Partial<Pick<User, 'full_name' | 'role' | 'is_active'>>,
   adminEmail: string
 ): Promise<Omit<User, 'password_hash'>> {
+  if (isCloudMode()) {
+    const updated = await cloudRepo.updateUser(id, updates, adminEmail);
+    if (!updated) throw new Error('User not found');
+    return updated;
+  }
   const db = getLocalDb();
   const index = db.users.findIndex((u) => u.id === id);
   if (index === -1) {
@@ -1448,6 +1580,11 @@ export async function resetUserPassword(
   id: string,
   adminEmail: string
 ): Promise<{ tempPassword: string }> {
+  if (isCloudMode()) {
+    const res = await cloudRepo.resetUserPassword(id, adminEmail);
+    if (!res.success || !res.temporaryPassword) throw new Error(res.error || 'User not found');
+    return { tempPassword: res.temporaryPassword };
+  }
   const db = getLocalDb();
   const index = db.users.findIndex((u) => u.id === id);
   if (index === -1) {
@@ -1474,6 +1611,11 @@ export async function changeUserPassword(
   oldPass: string,
   newPass: string
 ): Promise<boolean> {
+  if (isCloudMode()) {
+    const res = await cloudRepo.changeUserPassword(userId, oldPass, newPass);
+    if (!res.success) throw new Error(res.error || 'Password change failed');
+    return true;
+  }
   const db = getLocalDb();
   const user = db.users.find((u) => u.id === userId);
   if (!user) throw new Error('User not found');
@@ -1500,6 +1642,9 @@ export async function changeUserPassword(
 }
 
 export async function updateLastLogin(userId: string): Promise<void> {
+  if (isCloudMode()) {
+    return cloudRepo.updateLastLogin(userId);
+  }
   const db = getLocalDb();
   const user = db.users.find((u) => u.id === userId);
   if (user) {
@@ -1512,6 +1657,9 @@ export async function updateLastLogin(userId: string): Promise<void> {
 // RATE LIMITING REPOSITORY
 // -------------------------------------------------------------
 export async function recordLoginAttempt(email: string, success: boolean): Promise<void> {
+  if (isCloudMode()) {
+    return cloudRepo.recordLoginAttempt(email, success);
+  }
   const db = getLocalDb();
   db.loginAttempts.push({
     id: `att_${generateUUID()}`,
@@ -1527,6 +1675,9 @@ export async function recordLoginAttempt(email: string, success: boolean): Promi
 }
 
 export async function isLoginRateLimited(email: string): Promise<{ isLimited: boolean; retryAfterMinutes?: number }> {
+  if (isCloudMode()) {
+    return cloudRepo.isLoginRateLimited(email);
+  }
   const db = getLocalDb();
   const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
   const recentFailed = db.loginAttempts.filter(
@@ -1547,6 +1698,9 @@ export async function isLoginRateLimited(email: string): Promise<{ isLimited: bo
 // COMPANY SETTINGS REPOSITORY
 // -------------------------------------------------------------
 export async function getCompanySettings(): Promise<CompanySettings> {
+  if (isCloudMode()) {
+    return cloudRepo.getCompanySettings();
+  }
   const db = getLocalDb();
   return db.companySettings || INITIAL_SETTINGS;
 }
@@ -1555,6 +1709,9 @@ export async function updateCompanySettings(
   settings: Partial<CompanySettings>,
   userEmail: string
 ): Promise<CompanySettings> {
+  if (isCloudMode()) {
+    return cloudRepo.updateCompanySettings(settings, userEmail);
+  }
   const db = getLocalDb();
   db.companySettings = {
     ...db.companySettings,
@@ -1574,6 +1731,9 @@ export async function updateCompanySettings(
 // TEMPLATES & VERSIONING REPOSITORY
 // -------------------------------------------------------------
 export async function getTemplates(): Promise<MessageTemplate[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getTemplates();
+  }
   const db = getLocalDb();
   return db.templates || [];
 }
@@ -1583,6 +1743,9 @@ export async function getActiveTemplate(
   lang: MessageLanguage,
   jobId?: string | null
 ): Promise<MessageTemplate> {
+  if (isCloudMode()) {
+    return cloudRepo.getActiveTemplate(templateType, lang, jobId);
+  }
   const db = getLocalDb();
   const templates = db.templates || [];
 
@@ -1622,6 +1785,9 @@ export async function getTemplateHistory(
   lang: MessageLanguage,
   jobId?: string | null
 ): Promise<MessageTemplate[]> {
+  if (isCloudMode()) {
+    return cloudRepo.getTemplateHistory(templateType, lang, jobId);
+  }
   const db = getLocalDb();
   const templates = db.templates || [];
   return templates
@@ -1646,6 +1812,9 @@ export async function saveTemplateVersion(
   },
   userEmail: string
 ): Promise<MessageTemplate> {
+  if (isCloudMode()) {
+    return cloudRepo.saveTemplateVersion(data, userEmail);
+  }
   const db = getLocalDb();
   if (!db.templates) db.templates = [];
 
@@ -1697,6 +1866,9 @@ export async function saveTemplateVersion(
 }
 
 export async function setActiveTemplate(templateId: string, userEmail: string): Promise<MessageTemplate> {
+  if (isCloudMode()) {
+    return cloudRepo.setActiveTemplate(templateId, userEmail);
+  }
   const db = getLocalDb();
   const target = db.templates?.find((t) => t.id === templateId);
   if (!target) throw new Error('Template version not found');
@@ -1750,6 +1922,9 @@ export async function resetTemplateToDefault(
   userEmail: string,
   tone: MessageTone = 'friendly'
 ): Promise<MessageTemplate> {
+  if (isCloudMode()) {
+    return cloudRepo.resetTemplateToDefault(templateType, lang, userEmail, tone);
+  }
   const preset = TONE_PRESETS[templateType]?.[lang]?.[tone] || '';
   return saveTemplateVersion(
     {

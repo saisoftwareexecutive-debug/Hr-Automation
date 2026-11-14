@@ -1,6 +1,7 @@
 import React from 'react';
 import { requireAdmin } from '@/lib/auth';
-import { getLocalDb, getDbFilePath } from '@/lib/db';
+import { getLocalDb, getDbFilePath, getJobs, getCandidates, getUsers, getTemplates, getAuditLogs } from '@/lib/db';
+import { isCloudMode } from '@/lib/supabase';
 import fs from 'fs';
 import { BUILD_STAMP, APP_VERSION } from '@/lib/version';
 import { HealthDashboardClient } from './HealthDashboardClient';
@@ -11,40 +12,74 @@ export const dynamic = 'force-dynamic';
 export default async function HealthPage() {
   const session = await requireAdmin('/health');
 
-  const db = getLocalDb();
-  const dbPath = getDbFilePath();
-  let dbSizeKb = 0;
-  let dbModified = 'N/A';
-  try {
-    if (fs.existsSync(dbPath)) {
-      const stats = fs.statSync(dbPath);
-      dbSizeKb = Math.round(stats.size / 1024);
-      dbModified = stats.mtime.toISOString();
-    }
-  } catch {}
+  let stats;
+  if (isCloudMode()) {
+    const [jobs, apps, users, templates, auditLogs] = await Promise.all([
+      getJobs(),
+      getCandidates(),
+      getUsers(),
+      getTemplates(),
+      getAuditLogs(),
+    ]);
+    const candidateIds = new Set(apps.map((a) => a.candidate_id));
+    stats = {
+      buildStamp: BUILD_STAMP,
+      appVersion: APP_VERSION,
+      dbPath: 'Supabase Cloud PostgreSQL (RLS Protected)',
+      dbSizeKb: 0,
+      dbModified: 'Managed Cloud High-Availability',
+      counts: {
+        jobs: jobs.length,
+        candidates: candidateIds.size,
+        applications: apps.length,
+        users: users.length,
+        templates: templates.length,
+        auditLogs: auditLogs.length,
+      },
+      users: users.map((u) => ({
+        id: u.id,
+        email: u.email,
+        name: u.full_name,
+        role: u.role,
+        active: u.is_active,
+      })),
+    };
+  } else {
+    const db = getLocalDb();
+    const dbPath = getDbFilePath();
+    let dbSizeKb = 0;
+    let dbModified = 'N/A';
+    try {
+      if (fs.existsSync(dbPath)) {
+        const statsObj = fs.statSync(dbPath);
+        dbSizeKb = Math.round(statsObj.size / 1024);
+        dbModified = statsObj.mtime.toISOString();
+      }
+    } catch {}
 
-  const stats = {
-    buildStamp: BUILD_STAMP,
-    appVersion: APP_VERSION,
-    dbPath,
-    dbSizeKb,
-    dbModified,
-    counts: {
-      jobs: (db.jobs || []).length,
-      candidates: (db.candidates || []).length,
-      applications: (db.applications || []).length,
-      users: (db.users || []).length,
-      templates: (db.templates || []).length,
-      auditLogs: (db.auditLogs || []).length,
-    },
-    users: (db.users || []).map((u) => ({
-      id: u.id,
-      email: u.email,
-      name: u.full_name,
-      role: u.role,
-      active: u.is_active,
-    })),
-  };
+    stats = {
+      buildStamp: BUILD_STAMP,
+      appVersion: APP_VERSION,
+      dbPath,
+      dbSizeKb,
+      dbModified,
+      counts: {
+        jobs: (db.jobs || []).length,
+        candidates: (db.candidates || []).length,
+        applications: (db.applications || []).length,
+        users: (db.users || []).length,
+        templates: (db.templates || []).length,
+        auditLogs: (db.auditLogs || []).length,
+      },
+      users: (db.users || []).map((u) => ({
+        id: u.id,
+        email: u.email,
+        name: u.full_name,
+        role: u.role,
+        active: u.is_active,
+      })),
+    };
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
