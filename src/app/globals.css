@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+
+  /* Page & Surfaces (Light) */
+  --background: 248 250 252;      /* #f8fafc */
+  --surface: 255 255 255;         /* #ffffff */
+  --surface-raised: 255 255 255;  /* #ffffff */
+  --surface-hover: 241 245 249;   /* #f1f5f9 */
+  --surface-subtle: 248 250 252;  /* #f8fafc */
+
+  /* Borders & Dividers (Light) */
+  --border: 226 232 240;         /* #e2e8f0 */
+  --border-subtle: 241 245 249;  /* #f1f5f9 */
+
+  /* Typography (Light - WCAG AA compliant >= 4.5:1 against white & surface) */
+  --text-primary: 15 23 42;       /* #0f172a - 15.6:1 contrast */
+  --text-secondary: 71 85 105;    /* #475569 - 5.8:1 contrast */
+  --text-muted: 100 116 139;      /* #64748b - 4.6:1 contrast */
+
+  /* Brand Accents (Light) */
+  --brand: 79 70 229;             /* #4f46e5 */
+  --brand-hover: 67 56 202;       /* #4338ca */
+  --brand-subtle: 238 242 255;    /* #eef2ff */
+
+  /* Inputs (Light) */
+  --input-bg: 255 255 255;
+  --input-border: 203 213 225;    /* #cbd5e1 */
+  --focus-ring: 99 102 241;       /* #6366f1 */
+
+  /* Semantic Feedback (Light) */
+  --success-bg: 240 253 244;
+  --success-border: 187 247 208;
+  --success-text: 22 101 52;
+  --warning-bg: 255 251 235;
+  --warning-border: 254 243 199;
+  --warning-text: 146 64 14;
+  --danger-bg: 254 242 242;
+  --danger-border: 254 205 211;
+  --danger-text: 159 18 57;
+  --info-bg: 240 249 255;
+  --info-border: 186 230 253;
+  --info-text: 7 89 133;
+
+  /* Charts (Light) */
+  --chart-grid: #f1f5f9;
+  --chart-axis: #64748b;
+  --chart-tooltip-bg: #0f172a;
+  --chart-tooltip-border: #1e293b;
+  --chart-tooltip-text: #ffffff;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Page & Surfaces (Dark - Deep neutral midnight, not pure black #000) */
+  --background: 11 15 25;         /* #0b0f19 */
+  --surface: 20 27 45;            /* #141b2d */
+  --surface-raised: 30 41 59;     /* #1e293b */
+  --surface-hover: 30 41 59;      /* #1e293b */
+  --surface-subtle: 26 34 53;     /* #1a2235 */
+
+  /* Borders & Dividers (Dark) */
+  --border: 51 65 85;            /* #334155 */
+  --border-subtle: 30 41 59;     /* #1e293b */
+
+  /* Typography (Dark - WCAG AA compliant >= 4.5:1 against surface) */
+  --text-primary: 241 245 249;    /* #f1f5f9 - 13.5:1 contrast */
+  --text-secondary: 203 213 225;  /* #cbd5e1 - 9.2:1 contrast */
+  --text-muted: 148 163 184;      /* #94a3b8 - 5.5:1 contrast */
+
+  /* Brand Accents (Dark) - #818cf8 on #141b2d = 5.9:1 (WCAG AA pass) */
+  --brand: 129 140 248;           /* #818cf8 indigo-400 — passes AA on dark surface */
+  --brand-hover: 165 180 252;     /* #a5b4fc indigo-300 — hover state */
+  --brand-subtle: 30 27 75;       /* #1e1b4b */
+
+  /* Inputs (Dark) */
+  --input-bg: 15 23 42;           /* #0f172a */
+  --input-border: 51 65 85;       /* #334155 */
+  --focus-ring: 129 140 248;      /* #818cf8 */
+
+  /* Semantic Feedback (Dark) */
+  --success-bg: 6 78 59;
+  --success-border: 16 185 129;
+  --success-text: 110 231 183;
+  --warning-bg: 120 53 15;
+  --warning-border: 245 158 11;
+  --warning-text: 252 211 77;
+  --danger-bg: 136 19 55;
+  --danger-border: 244 63 94;
+  --danger-text: 253 164 175;
+  --info-bg: 12 74 110;
+  --info-border: 14 165 233;
+  --info-text: 125 211 252;
+
+  /* Charts (Dark) */
+  --chart-grid: #1e293b;
+  --chart-axis: #94a3b8;
+  --chart-tooltip-bg: #1e293b;
+  --chart-tooltip-border: #334155;
+  --chart-tooltip-text: #f1f5f9;
+}
+
+body {
+  background-color: rgb(var(--background));
+  color: rgb(var(--text-primary));
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  min-height: 100vh;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border));
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--text-muted));
+}
+
+/* Base Form Control Theme Support */
+input, select, textarea {
+  color-scheme: light;
+}
+
+.dark input, .dark select, .dark textarea {
+  color-scheme: dark;
+}
+
+/* Fix native dropdown option elements */
+select option {
+  background-color: rgb(var(--surface));
+  color: rgb(var(--text-primary));
+}

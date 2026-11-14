@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing & Coverage
+coverage/
+test-results/
+playwright-report/
+
+# Next.js Build Output
+.next/
+out/
+build/
+dist/
+
+# TypeScript Build Cache
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment variables & local secrets (CRITICAL)
+.env
+.env.*
+!.env.example
+
+# Live Data Store & Backups (CRITICAL: Never commit real candidate/user data)
+data/*.json
+data/backups/
+backups/
+HR AUTOMATION BACKUP*
+
+# Local uploads & dynamic runtime assets
+uploads/
+public/uploads/
+
+# Screenshots, debug captures & test logs
+screenshots/
+test_clean_upload.png
+test_sample_posting_upload.png
+test_e2e.js
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS metadata & temporary files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*.bak
+*.tmp
+
+# Disallow arbitrary spreadsheet/CSV data files by default
+*.xlsx
+*.xls
+*.csv
+
+# Explicit exceptions ONLY for fictional sample template files provided for user import testing
+!public/Candidates_clean_for_import.xlsx
+!public/Sample_Job_Posting.xlsx
+!public/sample_workindia_export.csv
+!public/sample_workindia_export.xlsx
+!test_data/**
+node_modules

@@ -1,0 +1,9 @@
+Candidate Name,Mobile Number,Email,Current City,Total Experience (Years),Current Salary (Monthly),Job Profile Applied,Application Date
+Manoj Kumar Sharma,9812345001,manoj.sharma@example.com,Bengaluru,2.5,24000,Customer Support Executive,10-Nov-2026
+Deepika Ramesh Rao,+91 98123 45002,deepika.rao@example.com,Bengaluru,1,21000,Customer Support Executive,10-Nov-2026
+Sunil V. Nair,09812345003,sunil.nair@example.com,Bengaluru,3,28000,Customer Support Executive,11-Nov-2026
+Aarti Santosh Jadhav,+91-98123-45004,aarti.jadhav@example.com,Mysuru,0.5,18000,Customer Support Executive,11-Nov-2026
+Vinay Kumar Tiwari,9812345005,vinay.tiwari@example.com,Bengaluru,4,30000,Customer Support Executive,11-Nov-2026
+Duplicate In File Test,9812345001,manoj.duplicate@example.com,Bengaluru,2.5,24000,Customer Support Executive,11-Nov-2026
+Bad Phone Candidate,12345,bad.phone@example.com,Bengaluru,1,20000,Customer Support Executive,11-Nov-2026
+Cross Job Candidate (Amit Kumar Verma),+919876500001,amit.verma@example.com,Bengaluru,2,25000,Customer Support Executive,12-Nov-2026
