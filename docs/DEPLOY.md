@@ -44,12 +44,13 @@ This document outlines the architecture, deployment process, environment configu
    - Copy **service_role** secret key (keep confidential).
 
 ### Step 2: Run Database Migrations
-In the Supabase Dashboard, open the **SQL Editor**, and run the SQL migration scripts located in `supabase/migrations/` in sequential order:
+In the Supabase Dashboard, open the **SQL Editor**, and run the SQL migration scripts in sequential order (or execute the consolidated bundle `supabase/_bundle.sql` in one step):
 1. `001_initial_schema.sql` (Creates core tables, foreign keys, and indexes)
 2. `002_add_job_location.sql` (Adds location and map URL fields)
-3. `003_cloud_parity_schema.sql` (Ensures full parity with local features)
+3. `003_cloud_parity_schema.sql` (Ensures full parity with local features: users, attempts, settings, templates, batches)
+4. `004_rls_deny_all_public.sql` (Enforces strict deny-all for anon/authenticated; backend connects via Secret Key)
 
-Alternatively, run the database migration helper script locally with your keys configured.
+Alternatively, generate and copy `supabase/_bundle.sql` (`npm run db:bundle`) directly into the Supabase SQL Editor.
 
 ### Step 3: Link Repository to Vercel
 1. Sign in to [Vercel](https://vercel.com) using your GitHub account.
@@ -64,17 +65,16 @@ Alternatively, run the database migration helper script locally with your keys c
 ### Step 4: Configure Production Environment Variables in Vercel
 In the Vercel project configuration, add the following Environment Variables for the **Production** environment:
 
-| Variable Name | Value | Purpose |
+| Variable Name | Alternative / Legacy | Purpose |
 | :--- | :--- | :--- |
-| `DATA_STORAGE_MODE` | `supabase` | Directs HireFlow to use cloud PostgreSQL |
-| `NEXT_PUBLIC_APP_URL` | `https://<your-project>.vercel.app` | Base URL for WhatsApp / SMS links |
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://<your-id>.supabase.co` | Supabase endpoint |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `ey...` | Client public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | `ey...` | Server administrative key (RLS bypass) |
-| `SESSION_SECRET` | *(Random 32+ char hex)* | Used to sign session cookies |
-| `AUTH_SECRET` | *(Random 32+ char hex)* | Fallback session secret |
+| `DATA_STORAGE_MODE` | — | Set to `supabase` for cloud mode (`local` for PC) |
+| `NEXT_PUBLIC_APP_URL` | — | Production URL (e.g., `https://hr-automation-sooty-eight.vercel.app`) |
+| `NEXT_PUBLIC_SUPABASE_URL` | — | Supabase project URL (`https://<project-id>.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public client key (public by design) |
+| `SUPABASE_SECRET_KEY` | `SUPABASE_SERVICE_ROLE_KEY` | Server-side secret key (CRITICAL: Never prefix with NEXT_PUBLIC_) |
+| `SESSION_SECRET` | `AUTH_SECRET` | Cryptographically random 32+ character string for HMAC signing |
 
-*Note: Never prefix `SUPABASE_SERVICE_ROLE_KEY` or `SESSION_SECRET` with `NEXT_PUBLIC_`.*
+*Note: Never expose `SUPABASE_SECRET_KEY` or `SESSION_SECRET` to browser client bundles.*
 
 ### Step 5: Deploy & Automated CI/CD
 1. Click **Deploy**.

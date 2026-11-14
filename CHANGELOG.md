@@ -8,10 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Strict Row Level Security deny-all policy for public/anon roles (`004_rls_deny_all_public.sql`).
+- Single-file migration bundler `scripts/bundle_migrations.mjs` generating `supabase/_bundle.sql` (`npm run db:bundle`).
+- Local JSON to Supabase PostgreSQL cloud migration runner `scripts/migrate-local-to-supabase.mjs` (`--dry-run` and `--real`).
+- Supabase user provisioning runner `scripts/provision_supabase_users.mjs` with cryptographically secure temporary passwords.
+- Real-time cloud database connectivity probe and latency telemetry at `/api/health`.
+- Indian Standard Time (`Asia/Kolkata`) date and timestamp formatting utilities in `src/lib/dateUtils.ts`.
+- Cryptographic HMAC-SHA256 session cookie signing with backward compatibility in `src/lib/auth.ts`.
+- Production HTTP security headers in `next.config.mjs` (CSP framing, nosniff, referrer, permissions policy, noindex).
 - PostgreSQL parity migration `003_cloud_parity_schema.sql` covering users, login attempts, company settings, message templates, import batches, workflow tracking, and Row Level Security (RLS).
 - Dedicated cloud repository implementation `src/lib/db/supabaseRepo.ts` with complete signature parity to local JSON repository.
 - Transparent storage engine dispatching in `src/lib/db/index.ts` enabled via `DATA_STORAGE_MODE=supabase`.
-- Dual-storage parity test suite `src/lib/__tests__/supabaseParity.test.ts` (68/68 tests passing across 11 test suites).
+- Dual-storage parity test suite `src/lib/__tests__/supabaseParity.test.ts` (70/70 tests passing across 11 test suites).
 - Cloud mode telemetry support in Admin `/health` diagnostics page.
 
 ## [0.1.0] - 2026-11-14

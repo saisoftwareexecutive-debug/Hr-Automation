@@ -3,7 +3,7 @@
 
 -- 1. USERS & AUTHENTICATION TABLE
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     full_name TEXT NOT NULL,
@@ -21,7 +21,7 @@ CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 
 -- 2. LOGIN ATTEMPTS (BRUTE-FORCE & RATE-LIMITING)
 CREATE TABLE IF NOT EXISTS login_attempts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     email TEXT NOT NULL,
     timestamp BIGINT NOT NULL,
     success BOOLEAN NOT NULL,
@@ -33,7 +33,7 @@ CREATE INDEX IF NOT EXISTS idx_login_attempts_timestamp ON login_attempts(timest
 
 -- 3. COMPANY SETTINGS
 CREATE TABLE IF NOT EXISTS company_settings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT '00000000-0000-0000-0000-000000000001',
     company_name TEXT NOT NULL,
     tagline TEXT,
     hr_name TEXT NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS company_settings (
 
 -- 4. MESSAGE TEMPLATES & VERSIONING
 CREATE TABLE IF NOT EXISTS message_templates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     template_type TEXT NOT NULL CHECK (template_type IN ('screening_invite', 'reminder_24h', 'interview_invite', 'rejection')),
     language TEXT NOT NULL CHECK (language IN ('hi', 'en')),
     tone TEXT NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS message_templates (
     content TEXT NOT NULL,
     version_number INTEGER NOT NULL DEFAULT 1,
     is_active BOOLEAN NOT NULL DEFAULT true,
-    job_id UUID REFERENCES jobs(id) ON DELETE CASCADE,
+    job_id TEXT REFERENCES jobs(id) ON DELETE CASCADE,
     created_by TEXT NOT NULL DEFAULT 'System',
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
@@ -68,9 +68,9 @@ CREATE INDEX IF NOT EXISTS idx_templates_is_active ON message_templates(is_activ
 
 -- 5. IMPORT BATCHES & BATCH UNDO
 CREATE TABLE IF NOT EXISTS import_batches (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     filename TEXT NOT NULL,
-    job_id UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     job_title TEXT NOT NULL,
     candidate_count INTEGER NOT NULL DEFAULT 0,
     imported_by TEXT NOT NULL,
@@ -81,12 +81,12 @@ CREATE INDEX IF NOT EXISTS idx_import_batches_job_id ON import_batches(job_id);
 
 -- 6. UPGRADE APPLICATIONS TABLE WITH WORKFLOW & ASSIGNMENT COLUMNS
 ALTER TABLE applications
-ADD COLUMN IF NOT EXISTS assigned_to UUID,
+ADD COLUMN IF NOT EXISTS assigned_to TEXT,
 ADD COLUMN IF NOT EXISTS assigned_to_name TEXT,
 ADD COLUMN IF NOT EXISTS call_outcome TEXT,
 ADD COLUMN IF NOT EXISTS call_back_at TIMESTAMPTZ,
 ADD COLUMN IF NOT EXISTS rejection_reason TEXT,
-ADD COLUMN IF NOT EXISTS batch_id UUID;
+ADD COLUMN IF NOT EXISTS batch_id TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_applications_assigned_to ON applications(assigned_to);
 CREATE INDEX IF NOT EXISTS idx_applications_call_outcome ON applications(call_outcome);
@@ -94,10 +94,10 @@ CREATE INDEX IF NOT EXISTS idx_applications_batch_id ON applications(batch_id);
 
 -- 7. UPGRADE CANDIDATES & NOTES
 ALTER TABLE candidates
-ADD COLUMN IF NOT EXISTS batch_id UUID;
+ADD COLUMN IF NOT EXISTS batch_id TEXT;
 
 ALTER TABLE candidate_notes
-ADD COLUMN IF NOT EXISTS created_by UUID;
+ADD COLUMN IF NOT EXISTS created_by TEXT;
 
 -- 8. ROW LEVEL SECURITY (RLS) FOR NEW TABLES
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;

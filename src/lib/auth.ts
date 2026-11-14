@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import crypto from 'crypto';
 import { UserRole } from '@/types';
 import { getCompanySettings, getUserByEmail, getUserById } from './db';
 
@@ -15,12 +16,32 @@ export interface SessionData {
   mustChangePassword?: boolean;
 }
 
+function getSessionSecret(): string {
+  return process.env.SESSION_SECRET || process.env.AUTH_SECRET || 'hireflow-local-default-session-secret-change-in-production';
+}
+
 export function createSessionCookieValue(data: SessionData): string {
-  return Buffer.from(JSON.stringify(data)).toString('base64');
+  const payload = Buffer.from(JSON.stringify(data)).toString('base64');
+  const secret = getSessionSecret();
+  const signature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  return `${payload}.${signature}`;
 }
 
 export function decodeSessionCookieValue(cookieValue: string): SessionData | null {
   try {
+    if (!cookieValue) return null;
+    const parts = cookieValue.split('.');
+    if (parts.length === 2) {
+      const [payload, signature] = parts;
+      const secret = getSessionSecret();
+      const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+      if (signature.length === expectedSignature.length && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+        const raw = Buffer.from(payload, 'base64').toString('utf-8');
+        return JSON.parse(raw) as SessionData;
+      }
+      return null;
+    }
+    // Backward compatibility for unsigned base64 sessions
     const raw = Buffer.from(cookieValue, 'base64').toString('utf-8');
     return JSON.parse(raw) as SessionData;
   } catch {

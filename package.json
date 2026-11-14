@@ -11,6 +11,7 @@
     "guard": "node scripts/guard.mjs",
     "verify": "npm run guard && npm test && npm run build",
     "smoke": "node scripts/smoke_test.mjs",
+    "db:bundle": "node scripts/bundle_migrations.mjs",
     "seed:sample": "node scripts/seed_sample.mjs"
   },
   "dependencies": {

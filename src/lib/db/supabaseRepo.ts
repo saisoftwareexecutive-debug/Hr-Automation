@@ -20,6 +20,7 @@ import { calculateCandidateScore } from '../scoring';
 import { generateUUID } from '../id';
 import { COMPANY_NAME, COMPANY_TAGLINE } from '../brand';
 import { TONE_PRESETS } from '../templates';
+import { getIndiaDateString } from '../dateUtils';
 
 function getClient() {
   if (!supabaseAdmin) {
@@ -572,51 +573,54 @@ export async function getApplicationByToken(token: string): Promise<Application 
 export async function saveImportedApplications(apps: Application[]): Promise<void> {
   const supabase = getClient();
   const now = new Date().toISOString();
+  const CHUNK_SIZE = 100;
 
-  for (const app of apps) {
-    if (app.candidate) {
-      await supabase.from('candidates').upsert(
-        {
-          id: app.candidate.id,
-          full_name: app.candidate.full_name,
-          phone: app.candidate.phone,
-          email: app.candidate.email || null,
-          city: app.candidate.city || null,
-          total_experience_months: app.candidate.total_experience_months || 0,
-          current_salary: app.candidate.current_salary || null,
-          source: app.candidate.source || 'csv_import',
-          batch_id: app.candidate.batch_id || app.batch_id || null,
-          created_at: app.candidate.created_at || now,
-          updated_at: now,
-        },
-        { onConflict: 'id' }
-      );
+  for (let i = 0; i < apps.length; i += CHUNK_SIZE) {
+    const chunk = apps.slice(i, i + CHUNK_SIZE);
+
+    const candidateRows = chunk
+      .filter((a) => Boolean(a.candidate))
+      .map((a) => ({
+        id: a.candidate!.id,
+        full_name: a.candidate!.full_name,
+        phone: a.candidate!.phone,
+        email: a.candidate!.email || null,
+        city: a.candidate!.city || null,
+        total_experience_months: a.candidate!.total_experience_months || 0,
+        current_salary: a.candidate!.current_salary || null,
+        source: a.candidate!.source || 'csv_import',
+        batch_id: a.candidate!.batch_id || a.batch_id || null,
+        created_at: a.candidate!.created_at || now,
+        updated_at: now,
+      }));
+
+    if (candidateRows.length > 0) {
+      await supabase.from('candidates').upsert(candidateRows, { onConflict: 'id' });
     }
 
-    await supabase.from('applications').upsert(
-      {
-        id: app.id,
-        candidate_id: app.candidate_id,
-        job_id: app.job_id,
-        status: app.status || 'new',
-        score: app.score || 0,
-        score_breakdown: app.score_breakdown || {},
-        token: app.token,
-        token_expires_at: app.token_expires_at,
-        form_sent_at: app.form_sent_at || null,
-        replied_at: app.replied_at || null,
-        interview_scheduled_at: app.interview_scheduled_at || null,
-        assigned_to: app.assigned_to || null,
-        assigned_to_name: app.assigned_to_name || null,
-        call_outcome: app.call_outcome || null,
-        call_back_at: app.call_back_at || null,
-        rejection_reason: app.rejection_reason || null,
-        batch_id: app.batch_id || null,
-        created_at: app.created_at || now,
-        updated_at: now,
-      },
-      { onConflict: 'id' }
-    );
+    const applicationRows = chunk.map((app) => ({
+      id: app.id,
+      candidate_id: app.candidate_id,
+      job_id: app.job_id,
+      status: app.status || 'new',
+      score: app.score || 0,
+      score_breakdown: app.score_breakdown || {},
+      token: app.token,
+      token_expires_at: app.token_expires_at,
+      form_sent_at: app.form_sent_at || null,
+      replied_at: app.replied_at || null,
+      interview_scheduled_at: app.interview_scheduled_at || null,
+      assigned_to: app.assigned_to || null,
+      assigned_to_name: app.assigned_to_name || null,
+      call_outcome: app.call_outcome || null,
+      call_back_at: app.call_back_at || null,
+      rejection_reason: app.rejection_reason || null,
+      batch_id: app.batch_id || null,
+      created_at: app.created_at || now,
+      updated_at: now,
+    }));
+
+    await supabase.from('applications').upsert(applicationRows, { onConflict: 'id' });
   }
 }
 
@@ -988,7 +992,7 @@ export async function getDailyProgress(dateStr?: string): Promise<{
   teamTarget: number;
   userStats: DailyProgress[];
 }> {
-  const today = dateStr || new Date().toISOString().slice(0, 10);
+  const today = dateStr || getIndiaDateString();
   const users = await getUsers();
   const settings = await getCompanySettings();
   const dailyTarget = settings.daily_target || 25;

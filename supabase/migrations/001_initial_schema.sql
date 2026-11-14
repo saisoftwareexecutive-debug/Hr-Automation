@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. PROFILES (HR Users & Roles)
 CREATE TABLE IF NOT EXISTS profiles (
-    id UUID PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('admin', 'hr_executive')) DEFAULT 'hr_executive',
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 -- 2. JOBS
 CREATE TABLE IF NOT EXISTS jobs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     title TEXT NOT NULL,
     department TEXT NOT NULL DEFAULT 'Operations',
     city TEXT NOT NULL,
@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS jobs (
 
 -- 3. SCORING RULES PER JOB (Transparent, Fair-Hiring Compliant)
 CREATE TABLE IF NOT EXISTS scoring_rules (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    job_id UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE UNIQUE,
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE UNIQUE,
     weights JSONB NOT NULL DEFAULT '{
         "city_weight": 20,
         "exp_weight": 25,
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS scoring_rules (
 
 -- 4. CANDIDATES (Master record de-duplicated by Indian E.164 phone)
 CREATE TABLE IF NOT EXISTS candidates (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     full_name TEXT NOT NULL,
     phone TEXT NOT NULL UNIQUE,
     email TEXT,
@@ -74,9 +74,9 @@ CREATE INDEX IF NOT EXISTS idx_candidates_phone ON candidates(phone);
 
 -- 5. APPLICATIONS (Candidate application per job with state machine & token)
 CREATE TABLE IF NOT EXISTS applications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
-    job_id UUID NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+    job_id TEXT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
     status TEXT NOT NULL CHECK (status IN ('new', 'form_sent', 'replied', 'shortlisted', 'interview', 'selected', 'rejected')) DEFAULT 'new',
     score NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
     score_breakdown JSONB NOT NULL DEFAULT '{
@@ -106,8 +106,8 @@ CREATE INDEX IF NOT EXISTS idx_applications_score ON applications(score DESC);
 
 -- 6. FORM ANSWERS (Candidate submitted answers)
 CREATE TABLE IF NOT EXISTS form_answers (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    application_id UUID NOT NULL REFERENCES applications(id) ON DELETE CASCADE UNIQUE,
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE UNIQUE,
     current_city TEXT NOT NULL,
     experience_years NUMERIC(4, 1) NOT NULL,
     matched_skills JSONB NOT NULL DEFAULT '[]'::jsonb,
@@ -123,8 +123,8 @@ CREATE TABLE IF NOT EXISTS form_answers (
 
 -- 7. MESSAGES LOG (Audit trail of WhatsApp & SMS triggers)
 CREATE TABLE IF NOT EXISTS messages_log (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    application_id UUID REFERENCES applications(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    application_id TEXT REFERENCES applications(id) ON DELETE CASCADE,
     recipient_phone TEXT NOT NULL,
     template_type TEXT NOT NULL CHECK (template_type IN ('screening_invite', 'reminder_24h', 'interview_invite', 'rejection', 'custom')),
     language TEXT NOT NULL CHECK (language IN ('hi', 'en')),
@@ -135,8 +135,8 @@ CREATE TABLE IF NOT EXISTS messages_log (
 
 -- 8. STATUS HISTORY (Audit trail of pipeline transitions)
 CREATE TABLE IF NOT EXISTS status_history (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    application_id UUID NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
     old_status TEXT,
     new_status TEXT NOT NULL,
     changed_by TEXT NOT NULL DEFAULT 'System',
@@ -148,9 +148,9 @@ CREATE INDEX IF NOT EXISTS idx_status_history_app ON status_history(application_
 
 -- 9. CANDIDATE NOTES
 CREATE TABLE IF NOT EXISTS candidate_notes (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    application_id UUID NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
-    candidate_id UUID NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    application_id TEXT NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    candidate_id TEXT NOT NULL REFERENCES candidates(id) ON DELETE CASCADE,
     author_name TEXT NOT NULL DEFAULT 'HR Executive',
     note_text TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS candidate_notes (
 
 -- 10. AUDIT LOG (Complete system event trail)
 CREATE TABLE IF NOT EXISTS audit_log (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
     user_email TEXT NOT NULL,
     action TEXT NOT NULL,
     entity_type TEXT NOT NULL,

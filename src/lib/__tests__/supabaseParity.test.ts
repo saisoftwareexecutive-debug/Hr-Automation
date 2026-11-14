@@ -24,12 +24,12 @@ describe('Supabase Data Layer & Dual Storage Parity', () => {
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS import_batches');
 
     // Required columns on applications
-    expect(sql).toContain('assigned_to UUID');
+    expect(sql).toContain('assigned_to TEXT');
     expect(sql).toContain('assigned_to_name TEXT');
     expect(sql).toContain('call_outcome TEXT');
     expect(sql).toContain('call_back_at TIMESTAMPTZ');
     expect(sql).toContain('rejection_reason TEXT');
-    expect(sql).toContain('batch_id UUID');
+    expect(sql).toContain('batch_id TEXT');
 
     // Required columns on candidates & notes
     expect(sql).toContain('ALTER TABLE candidates');
@@ -102,6 +102,40 @@ describe('Supabase Data Layer & Dual Storage Parity', () => {
       expect(typeof (cloudRepo as any)[fnName]).toBe('function');
       expect(typeof (db as any)[fnName]).toBe('function');
     }
+  });
+
+  it('verifies migration 004_rls_deny_all_public.sql exists and enforces strict deny-by-default RLS', () => {
+    const migrationPath = path.join(process.cwd(), 'supabase', 'migrations', '004_rls_deny_all_public.sql');
+    expect(fs.existsSync(migrationPath)).toBe(true);
+
+    const sql = fs.readFileSync(migrationPath, 'utf8');
+
+    // Confirms all policies for public/anon/authenticated are dropped
+    expect(sql).toContain('DROP POLICY IF EXISTS "Public can view application by token" ON applications');
+    expect(sql).toContain('DROP POLICY IF EXISTS "Public can insert form answers" ON form_answers');
+    expect(sql).toContain('DROP POLICY IF EXISTS "Authenticated users have full access to users" ON users');
+    expect(sql).toContain('DROP POLICY IF EXISTS "Authenticated users have full access to jobs" ON jobs');
+    expect(sql).toContain('DROP POLICY IF EXISTS "Authenticated users have full access to candidates" ON candidates');
+    expect(sql).toContain('DROP POLICY IF EXISTS "Authenticated users have full access to applications" ON applications');
+    expect(sql).toContain('DROP POLICY IF EXISTS "Authenticated users have full access to company_settings" ON company_settings');
+
+    // Confirms RLS remains strictly enabled across all tables
+    expect(sql).toContain('ALTER TABLE IF EXISTS users ENABLE ROW LEVEL SECURITY');
+    expect(sql).toContain('ALTER TABLE IF EXISTS jobs ENABLE ROW LEVEL SECURITY');
+    expect(sql).toContain('ALTER TABLE IF EXISTS candidates ENABLE ROW LEVEL SECURITY');
+    expect(sql).toContain('ALTER TABLE IF EXISTS applications ENABLE ROW LEVEL SECURITY');
+    expect(sql).toContain('ALTER TABLE IF EXISTS company_settings ENABLE ROW LEVEL SECURITY');
+  });
+
+  it('verifies migration bundle supabase/_bundle.sql compiles all 4 migrations', () => {
+    const bundlePath = path.join(process.cwd(), 'supabase', '_bundle.sql');
+    expect(fs.existsSync(bundlePath)).toBe(true);
+
+    const bundleSql = fs.readFileSync(bundlePath, 'utf8');
+    expect(bundleSql).toContain('001_initial_schema.sql');
+    expect(bundleSql).toContain('002_add_job_location.sql');
+    expect(bundleSql).toContain('003_cloud_parity_schema.sql');
+    expect(bundleSql).toContain('004_rls_deny_all_public.sql');
   });
 
   it('executes repository operations cleanly in local mode without cloud network overhead', async () => {

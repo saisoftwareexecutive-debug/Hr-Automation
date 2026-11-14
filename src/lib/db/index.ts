@@ -43,6 +43,7 @@ import { generateUUID } from '../id';
 import { ImportBatch } from '@/types';
 import { validateJobInput } from '../validation';
 import { COMPANY_NAME, COMPANY_TAGLINE } from '../brand';
+import { getIndiaDateString } from '../dateUtils';
 import { isCloudMode } from '../supabase';
 import * as cloudRepo from './supabaseRepo';
 
@@ -285,6 +286,9 @@ export function getLocalDb(): DatabaseSchema {
 }
 
 export function saveLocalDb(db: DatabaseSchema): void {
+  if (isCloudMode()) {
+    return; // Enforce zero disk writes in serverless cloud mode
+  }
   try {
     const dataDir = getDataDirPath();
     const dbFile = getDbFilePath();
@@ -1063,7 +1067,7 @@ export async function getDailyProgress(dateStr?: string): Promise<{
   }
   const db = getLocalDb();
   const settings = db.companySettings || INITIAL_SETTINGS;
-  const targetDate = dateStr || new Date().toISOString().slice(0, 10);
+  const targetDate = dateStr || getIndiaDateString();
 
   const execs = db.users.filter((u) => u.is_active);
   const stats: DailyProgress[] = execs.map((u) => {
