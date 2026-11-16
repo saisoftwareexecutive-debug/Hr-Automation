@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Dynamic build stamp generation in `src/lib/version.ts` linked to `NEXT_PUBLIC_BUILD_TIME` (`Build 2026-11-16 11:15 IST`).
+- Configured dynamic rendering (`force-dynamic`) on `/login` route to prevent CDN edge-cache staleness of build stamps and form states.
 - Updated Pallavi Mali's recruiter account with dedicated Login ID (`Pallavimali@123`), bcrypt hash, active status, and HR Executive role permissions.
 - Upgraded login input validation to accept case-insensitive alphanumeric login IDs without browser type constraints, maintaining existing UI and labels.
 - Added comprehensive authentication test for Pallavi Mali account in `src/lib/__tests__/auth.test.ts` (71/71 tests passing).
