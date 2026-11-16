@@ -134,7 +134,10 @@ function LoginForm() {
             <div className="relative">
               <Mail className="w-4 h-4 text-muted absolute left-3.5 top-3" />
               <input
-                type="email"
+                type="text"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

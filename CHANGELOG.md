@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Updated Pallavi Mali's recruiter account with dedicated Login ID (`Pallavimali@123`), bcrypt hash, active status, and HR Executive role permissions.
+- Upgraded login input validation to accept case-insensitive alphanumeric login IDs without browser type constraints, maintaining existing UI and labels.
+- Added comprehensive authentication test for Pallavi Mali account in `src/lib/__tests__/auth.test.ts` (71/71 tests passing).
 - Strict Row Level Security deny-all policy for public/anon roles (`004_rls_deny_all_public.sql`).
 - Single-file migration bundler `scripts/bundle_migrations.mjs` generating `supabase/_bundle.sql` (`npm run db:bundle`).
 - Local JSON to Supabase PostgreSQL cloud migration runner `scripts/migrate-local-to-supabase.mjs` (`--dry-run` and `--real`).

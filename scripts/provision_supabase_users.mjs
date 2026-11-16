@@ -47,24 +47,32 @@ function generateSecurePassword(length = 14) {
   return pwd;
 }
 
+const PALLAVI_HASH = '$2b$10$9JCeZPGSLJ06sMR99QrWGubJPtElBzmmZRJVUyfJeOule1sLXu.iC';
+
 const USERS_TO_PROVISION = [
   {
     id: 'usr_admin_alex',
     email: 'admin@hireflow.internal',
     full_name: 'Alex',
     role: 'admin',
+    customHash: null,
+    mustChange: true,
   },
   {
     id: 'usr_exec_pallavi',
-    email: 'pallavi.mali@hireflow.internal',
+    email: 'Pallavimali@123',
     full_name: 'Pallavi Mali',
     role: 'hr_executive',
+    customHash: PALLAVI_HASH,
+    mustChange: false,
   },
   {
     id: 'usr_exec_shradha',
     email: 'shradha.yadav@hireflow.internal',
     full_name: 'Shradha Yadav',
     role: 'hr_executive',
+    customHash: null,
+    mustChange: true,
   },
 ];
 
@@ -74,11 +82,19 @@ async function run() {
   console.log(`Target Supabase URL: ${supabaseUrl}`);
   console.log('='.repeat(70));
 
+  // Remove legacy Pallavi email if present
+  await supabase.from('users').delete().eq('email', 'pallavi.mali@hireflow.internal');
+
   const results = [];
 
   for (const u of USERS_TO_PROVISION) {
-    const tempPassword = generateSecurePassword(14);
-    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    let passwordHash = u.customHash;
+    let tempPassword = null;
+
+    if (!passwordHash) {
+      tempPassword = generateSecurePassword(14);
+      passwordHash = await bcrypt.hash(tempPassword, 10);
+    }
 
     const { error: upsertErr } = await supabase.from('users').upsert({
       id: u.id,
@@ -87,7 +103,7 @@ async function run() {
       full_name: u.full_name,
       role: u.role,
       is_active: true,
-      must_change_password: true,
+      must_change_password: u.mustChange,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
 
@@ -98,12 +114,13 @@ async function run() {
 
     // Reset rate-limiting / login attempts for this user
     await supabase.from('login_attempts').delete().eq('email', u.email);
+    await supabase.from('login_attempts').delete().eq('email', u.email.toLowerCase());
 
     results.push({
       fullName: u.full_name,
       email: u.email,
       role: u.role,
-      tempPassword,
+      tempPassword: tempPassword || '[Specified in Task]',
     });
   }
 

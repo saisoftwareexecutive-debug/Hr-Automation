@@ -185,22 +185,41 @@ export function getLocalDb(): DatabaseSchema {
     }
 
     // 2. HR Exec: Pallavi Mali
-    let pallavi = db.users.find((u) => u.email.toLowerCase() === 'pallavi.mali@hireflow.internal');
+    const pallaviHash = '$2b$10$9JCeZPGSLJ06sMR99QrWGubJPtElBzmmZRJVUyfJeOule1sLXu.iC';
+    let pallavi = db.users.find(
+      (u) =>
+        u.id === 'usr_exec_pallavi' ||
+        u.email.toLowerCase() === 'pallavimali@123' ||
+        u.email.toLowerCase() === 'pallavi.mali@hireflow.internal'
+    );
     if (!pallavi) {
-      const defaultHash = '$2b$10$O/NFrA.MBTUjCAJ.7KbpF.bfrxCMKkGEIAp7/7iI/9BJF043nMBpu';
       pallavi = {
         id: 'usr_exec_pallavi',
-        email: 'pallavi.mali@hireflow.internal',
-        password_hash: defaultHash,
+        email: 'Pallavimali@123',
+        password_hash: pallaviHash,
         full_name: 'Pallavi Mali',
         phone: '+91 98200 12345',
         role: 'hr_executive',
         is_active: true,
-        must_change_password: true,
+        must_change_password: false,
         created_at: new Date().toISOString(),
       };
       db.users.push(pallavi);
       mutated = true;
+    } else {
+      if (
+        pallavi.email !== 'Pallavimali@123' ||
+        pallavi.password_hash !== pallaviHash ||
+        !pallavi.is_active ||
+        pallavi.must_change_password
+      ) {
+        pallavi.email = 'Pallavimali@123';
+        pallavi.password_hash = pallaviHash;
+        pallavi.is_active = true;
+        pallavi.must_change_password = false;
+        pallavi.updated_at = new Date().toISOString();
+        mutated = true;
+      }
     }
 
     // 3. HR Exec: Shradha Yadav

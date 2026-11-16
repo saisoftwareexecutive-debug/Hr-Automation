@@ -44,6 +44,27 @@ describe('Auth & Session System', () => {
     expect(wrongMatch).toBe(false);
   });
 
+  it('verifies Pallavi Mali account with custom login ID Pallavimali@123 and hr_executive role', async () => {
+    // Exact ID
+    const userExact = await getUserByEmail('Pallavimali@123');
+    expect(userExact).toBeDefined();
+    expect(userExact?.full_name).toBe('Pallavi Mali');
+    expect(userExact?.role).toBe('hr_executive');
+    expect(userExact?.is_active).toBe(true);
+
+    // Case-insensitive ID
+    const userLower = await getUserByEmail('pallavimali@123');
+    expect(userLower).toBeDefined();
+    expect(userLower?.id).toBe(userExact?.id);
+
+    // Password verification against hash
+    const isMatch = await bcrypt.compare('Pallavi@2026', userExact!.password_hash);
+    expect(isMatch).toBe(true);
+
+    // Role boundary: not admin
+    expect(userExact?.role).not.toBe('admin');
+  });
+
   it('implements login rate limiting after 5 failed attempts', async () => {
     const testEmail = `ratelimit_${Date.now()}@hireflow.internal`;
 
