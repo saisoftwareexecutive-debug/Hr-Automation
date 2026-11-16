@@ -89,3 +89,14 @@ To run the application, double-click **`START_HIREFLOW.bat`** in the project roo
 c:\Users\LENOVO\Documents\HR AUTOMATION\START_HIREFLOW.bat
 ```
 It will automatically free port 3000, create a daily backup, start the server, and open your browser to `http://localhost:3000`. To stop the server at any time, run **`STOP_HIREFLOW.bat`**.
+
+---
+
+## 7. Cloud Migration & Repository Sanitization
+
+- **Supabase PostgreSQL Connectivity**: Connected live to Supabase project (`dewcnqoreuhnrmvswxuf` in Tokyo, `ap-northeast-1`).
+- **Row Level Security (RLS)**: Enforced strict RLS on all 15 database tables with zero policies for anon and authenticated roles. Public publishable key requests are denied on every table.
+- **Data Migration**: Migrated 1 Company Settings record, 8 Message Templates, 1 Job with Scoring Rules, 10 Candidates, 10 Applications, and 9 Status History items with zero data loss or mutation.
+- **Repository Sanitization**: Completely removed all users, passwords, and password hashes from git-tracked code (`initialData.ts`, `sampleSeedData.ts` deleted, `supabase/seed.sql` sanitized). Pre-flight security guard (`scripts/guard.mjs`) scans for bcrypt hash patterns.
+- **Production Account Security**: Real accounts provisioned with `must_change_password: true` and rate limits cleared.
+- **Strict Cloud Storage Mode**: Unconfigured or unreachable Supabase states throw explicit errors and never fall back to local disk storage in production.

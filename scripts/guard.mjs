@@ -16,6 +16,10 @@ const FORBIDDEN_SECRET_PATTERNS = [
     name: 'SUPABASE_SERVICE_ROLE_KEY with actual value',
     regex: /SUPABASE_SERVICE_ROLE_KEY\s*=\s*(?!your-|\bplaceholder\b|\btest\b|"your-)[A-Za-z0-9_.-]{20,}/,
   },
+  {
+    name: 'Bcrypt Password Hash',
+    regex: /\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}/,
+  },
 ];
 
 function getTrackedAndStagedFiles() {

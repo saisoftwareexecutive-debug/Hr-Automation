@@ -13,7 +13,7 @@
 ---
 
 **Company:** Chhatrapati Shivaji’s Creative Solutions  
-**Last updated:** 2026-11-16 11:15 IST  
+**Last updated:** 2026-11-16 12:45 IST  
 **Backup:** HR AUTOMATION BACKUP 8 ✅  
 **Repository:** https://github.com/saisoftwareexecutive-debug/Hr-Automation.git (main)  
 **Tests:** 71/71 passing across 11 test files (`npm test`) ✅  
@@ -26,6 +26,10 @@
 
 | Area | Status | Verification |
 |------|--------|--------------|
+| **Supabase Cloud Live Connection** | ✅ Completed | Connected live Supabase PostgreSQL (Tokyo `dewcnqoreuhnrmvswxuf`), applied strict RLS (0 policies for anon/auth), migrated real data (1 job, 10 candidates, 10 applications, 9 status history, 8 templates, settings). |
+| **User Accounts Provisioned** | ✅ Configured | Alex (Admin), Pallavi Mali (HR Exec, `Pallavimali@123`), Shradha Yadav (HR Exec) provisioned with bcrypt hashes and `must_change_password: true`. Zero demo users. |
+| **Repository Sanitization** | ✅ Enforced | Completely removed users, password hashes, and demo candidate datasets from git-tracked code (`initialData.ts`, `sampleSeedData.ts` deleted, `seed.sql` sanitized, `guard.mjs` hash scanner added). |
+| **Strict Cloud Fallback Prevention** | ✅ Enforced | Cloud storage mode locked; unconfigured or unreachable Supabase explicitly errors out without falling back to local JSON. |
 | **P1: `/candidates` Crash Fix** | ✅ Resolved | Null-safe property access across `CandidateTableClient.tsx`, `ScoreBadge.tsx`, and `DashboardCharts.tsx`. Added `src/app/error.tsx`, `src/app/global-error.tsx`, and `src/app/not-found.tsx`. Verified across Empty, Realistic, and 2,000-candidate states. |
 | **P2: Demo Mode Purge** | ✅ Resolved | Wiped stale port 3000 process and cached `.next`. Purged mock names and orphan notes. Added visible build stamp to login footer, layout footer, and `/health`. Verified 100% absence of demo blocks. |
 | **P3: Real User Data Restored** | ✅ Restored | Restored the "Data Entry Operator" (Mumbai) job and candidate applications in local data store. Assignments distributed evenly between HR executives. |

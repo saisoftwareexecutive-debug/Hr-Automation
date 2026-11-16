@@ -7,8 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security & Sanitization
+- Removed all user objects, passwords, and static bcrypt password hashes from git-tracked source code (`src/lib/db/initialData.ts`, `src/lib/db/index.ts`, `supabase/seed.sql`).
+- Permanently deleted legacy demo dataset `src/lib/db/sampleSeedData.ts` to ensure zero mock candidate or hash exposure in public git history.
+- Added strict Bcrypt Password Hash pattern detection into pre-flight security guard (`scripts/guard.mjs`).
+- Enforced strict non-fallback cloud mode: when `DATA_STORAGE_MODE=supabase`, the application throws explicit errors if credentials or database connections fail, preventing silent fallbacks to local mode in production.
+- Verified Row Level Security (RLS) on all 15 tables with zero policies for anon/authenticated roles, with automated verification (`scripts/verify_supabase_rls.mjs`).
+
 ### Added
-- Dynamic build stamp generation in `src/lib/version.ts` linked to `NEXT_PUBLIC_BUILD_TIME` (`Build 2026-11-16 11:15 IST`).
+- Completed Supabase cloud migration: Company Settings (1), Message Templates (8), Jobs (1), Candidates (10), Applications (10), Status History (9).
+- Provisioned exactly 3 active production accounts in Supabase PostgreSQL (Alex, Pallavi Mali, Shradha Yadav) with `must_change_password: true` and cleared lockouts.
+- Updated build stamp to `Build 2026-11-16 12:45 IST`.
+- Dynamic build stamp generation in `src/lib/version.ts` linked to `NEXT_PUBLIC_BUILD_TIME` (`Build 2026-11-16 12:45 IST`).
 - Configured dynamic rendering (`force-dynamic`) on `/login` route to prevent CDN edge-cache staleness of build stamps and form states.
 - Updated Pallavi Mali's recruiter account with dedicated Login ID (`Pallavimali@123`), bcrypt hash, active status, and HR Executive role permissions.
 - Upgraded login input validation to accept case-insensitive alphanumeric login IDs without browser type constraints, maintaining existing UI and labels.

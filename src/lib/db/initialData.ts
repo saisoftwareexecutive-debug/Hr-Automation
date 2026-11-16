@@ -18,50 +18,13 @@ export const INITIAL_STATUS_HISTORY: StatusHistoryItem[] = [];
 
 export const INITIAL_AUDIT_LOGS: AuditLogItem[] = [];
 
-export const INITIAL_USERS: User[] = [
-  {
-    id: 'usr_admin_alex',
-    email: 'admin@hireflow.internal',
-    password_hash: '$2b$10$LV3d541DpzNnndkCvycHjeJwPZr3a9wJ2D0TV1yBJaIIK/GVL9LL2', // Seed placeholder replaced at init
-    full_name: 'Alex',
-    phone: '+91 98765 01000',
-    role: 'admin',
-    is_active: true,
-    must_change_password: true,
-    last_login_at: undefined,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'usr_exec_pallavi',
-    email: 'Pallavimali@123',
-    password_hash: '$2b$10$9JCeZPGSLJ06sMR99QrWGubJPtElBzmmZRJVUyfJeOule1sLXu.iC',
-    full_name: 'Pallavi Mali',
-    phone: '+91 98200 12345',
-    role: 'hr_executive',
-    is_active: true,
-    must_change_password: false,
-    last_login_at: undefined,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'usr_exec_shradha',
-    email: 'shradha.yadav@hireflow.internal',
-    password_hash: '$2b$10$O/NFrA.MBTUjCAJ.7KbpF.bfrxCMKkGEIAp7/7iI/9BJF043nMBpu',
-    full_name: 'Shradha Yadav',
-    phone: '+91 98200 67890',
-    role: 'hr_executive',
-    is_active: true,
-    must_change_password: true,
-    last_login_at: undefined,
-    created_at: new Date().toISOString(),
-  },
-];
+export const INITIAL_USERS: User[] = [];
 
 export const INITIAL_SETTINGS: CompanySettings = {
   company_name: COMPANY_NAME,
   tagline: COMPANY_TAGLINE,
-  hr_name: 'Alex',
-  hr_phone: '+91 9876543210',
+  hr_name: 'HR Desk',
+  hr_phone: '',
   default_language: 'en',
   default_tone: 'friendly',
   inactivity_timeout_minutes: 30,

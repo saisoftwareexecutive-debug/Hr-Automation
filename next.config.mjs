@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   env: {
-    NEXT_PUBLIC_BUILD_TIME: '2026-11-16 11:15 IST',
+    NEXT_PUBLIC_BUILD_TIME: '2026-11-16 12:45 IST',
   },
   async headers() {
     return [

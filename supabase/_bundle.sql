@@ -1,6 +1,6 @@
 -- =========================================================================
 -- HireFlow Full Database Schema Bundle
--- Generated: 2026-11-14T12:22:38.077Z
+-- Generated: 2026-11-16T06:44:44.745Z
 -- For Supabase Project: dewcnqoreuhnrmvswxuf (Tokyo, ap-northeast-1)
 -- =========================================================================
 

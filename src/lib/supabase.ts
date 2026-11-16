@@ -17,7 +17,7 @@ export const isSupabaseConfigured = Boolean(
 );
 
 export function isCloudMode(): boolean {
-  return process.env.DATA_STORAGE_MODE === 'supabase' && isSupabaseConfigured;
+  return process.env.DATA_STORAGE_MODE === 'supabase';
 }
 
 // Server-side only: all cloud database queries execute via supabaseAdmin with secret/service key

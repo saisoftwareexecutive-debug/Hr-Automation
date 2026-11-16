@@ -159,88 +159,6 @@ export function getLocalDb(): DatabaseSchema {
       });
     }
 
-    // Seed real users: Alex (Admin), Pallavi Mali (HR Exec), Shradha Yadav (HR Exec)
-    // 1. Admin: Alex
-    const adminUser = db.users.find((u) => u.email.toLowerCase() === 'admin@hireflow.internal');
-    if (adminUser) {
-      if (adminUser.full_name === 'Rajesh Sharma') {
-        adminUser.full_name = 'Alex';
-        adminUser.phone = adminUser.phone || '+91 98765 01000';
-        mutated = true;
-      }
-    } else {
-      const defaultHash = '$2b$10$LV3d541DpzNnndkCvycHjeJwPZr3a9wJ2D0TV1yBJaIIK/GVL9LL2';
-      db.users.push({
-        id: 'usr_admin_alex',
-        email: 'admin@hireflow.internal',
-        password_hash: defaultHash,
-        full_name: 'Alex',
-        phone: '+91 98765 01000',
-        role: 'admin',
-        is_active: true,
-        must_change_password: true,
-        created_at: new Date().toISOString(),
-      });
-      mutated = true;
-    }
-
-    // 2. HR Exec: Pallavi Mali
-    const pallaviHash = '$2b$10$9JCeZPGSLJ06sMR99QrWGubJPtElBzmmZRJVUyfJeOule1sLXu.iC';
-    let pallavi = db.users.find(
-      (u) =>
-        u.id === 'usr_exec_pallavi' ||
-        u.email.toLowerCase() === 'pallavimali@123' ||
-        u.email.toLowerCase() === 'pallavi.mali@hireflow.internal'
-    );
-    if (!pallavi) {
-      pallavi = {
-        id: 'usr_exec_pallavi',
-        email: 'Pallavimali@123',
-        password_hash: pallaviHash,
-        full_name: 'Pallavi Mali',
-        phone: '+91 98200 12345',
-        role: 'hr_executive',
-        is_active: true,
-        must_change_password: false,
-        created_at: new Date().toISOString(),
-      };
-      db.users.push(pallavi);
-      mutated = true;
-    } else {
-      if (
-        pallavi.email !== 'Pallavimali@123' ||
-        pallavi.password_hash !== pallaviHash ||
-        !pallavi.is_active ||
-        pallavi.must_change_password
-      ) {
-        pallavi.email = 'Pallavimali@123';
-        pallavi.password_hash = pallaviHash;
-        pallavi.is_active = true;
-        pallavi.must_change_password = false;
-        pallavi.updated_at = new Date().toISOString();
-        mutated = true;
-      }
-    }
-
-    // 3. HR Exec: Shradha Yadav
-    let shradha = db.users.find((u) => u.email.toLowerCase() === 'shradha.yadav@hireflow.internal');
-    if (!shradha) {
-      const defaultHash = '$2b$10$O/NFrA.MBTUjCAJ.7KbpF.bfrxCMKkGEIAp7/7iI/9BJF043nMBpu';
-      shradha = {
-        id: 'usr_exec_shradha',
-        email: 'shradha.yadav@hireflow.internal',
-        password_hash: defaultHash,
-        full_name: 'Shradha Yadav',
-        phone: '+91 98200 67890',
-        role: 'hr_executive',
-        is_active: true,
-        must_change_password: true,
-        created_at: new Date().toISOString(),
-      };
-      db.users.push(shradha);
-      mutated = true;
-    }
-
     // Purge demo profiles completely
     const initialUserCount = db.users.length;
     db.users = db.users.filter((u) => {
@@ -259,8 +177,8 @@ export function getLocalDb(): DatabaseSchema {
       mutated = true;
     }
 
-    // Auto-distribute candidates between Pallavi and Shradha if unassigned
-    const activeExecs = [pallavi, shradha].filter(Boolean);
+    // Auto-distribute candidates between active HR executives if unassigned
+    const activeExecs = (db.users || []).filter((u) => u.role === 'hr_executive' && u.is_active);
     if (activeExecs.length > 0 && db.applications) {
       db.applications.forEach((app, idx) => {
         if (!app.assigned_to) {

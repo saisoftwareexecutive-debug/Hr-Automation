@@ -1,6 +1,7 @@
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
+import bcrypt from 'bcryptjs';
 import { afterAll, beforeAll } from 'vitest';
 import { COMPANY_NAME, COMPANY_TAGLINE, DEFAULT_LOGO_PATH } from '../lib/brand';
 
@@ -14,6 +15,7 @@ const testDbFile = path.join(testDir, `hireflow_test_db_${Date.now()}.json`);
 process.env.HIREFLOW_DATA_FILE = testDbFile;
 process.env.DATA_DIR = testDir;
 (process.env as any).NODE_ENV = 'test';
+process.env.DATA_STORAGE_MODE = 'local';
 
 // Populate initial test data from sampleSeedData so tests have a clean sandbox
 try {
@@ -133,8 +135,9 @@ try {
     }
   ];
 
-  // Test bcrypt hash for "testpassword123"
-  const testHash = '$2b$10$LV3d541DpzNnndkCvycHjeJwPZr3a9wJ2D0TV1yBJaIIK/GVL9LL2'; // admin123
+  // Dynamic test bcrypt hash for isolated test suite
+  const testHash = bcrypt.hashSync('admin123', 4);
+  const testDisabledHash = bcrypt.hashSync('disabledpassword123', 4);
   const testUsers = [
     {
       id: 'usr_admin_alex',
@@ -149,7 +152,7 @@ try {
     },
     {
       id: 'usr_exec_pallavi',
-      email: 'pallavi.mali@hireflow.internal',
+      email: 'Pallavimali@123',
       password_hash: testHash,
       full_name: 'Pallavi Mali',
       phone: '+91 98200 12345',
@@ -172,7 +175,7 @@ try {
     {
       id: 'usr_exec_02',
       email: 'hr.priya@hireflow.internal',
-      password_hash: '$2b$10$disabled_account_demo_inactivated_hash_x99',
+      password_hash: testDisabledHash,
       full_name: 'Priya Menon (Demo)',
       phone: '+91 98765 43210',
       role: 'hr_executive',

@@ -24,7 +24,7 @@ import { getIndiaDateString } from '../dateUtils';
 
 function getClient() {
   if (!supabaseAdmin) {
-    throw new Error('Supabase client is not configured');
+    throw new Error('Database Error: Cloud storage mode is enabled (DATA_STORAGE_MODE=supabase), but Supabase is unconfigured or credentials (SUPABASE_SECRET_KEY) are missing. Local fallback is strictly disabled in cloud mode.');
   }
   return supabaseAdmin;
 }
