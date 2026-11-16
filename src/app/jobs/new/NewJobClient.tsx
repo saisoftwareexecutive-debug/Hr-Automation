@@ -20,8 +20,9 @@ export function NewJobClient() {
   const [openings, setOpenings] = useState(5);
   const [minExp, setMinExp] = useState(0.5);
   const [maxExp, setMaxExp] = useState(3.0);
-  const [minSalary, setMinSalary] = useState(18000);
-  const [maxSalary, setMaxSalary] = useState(30000);
+  const [minSalary, setMinSalary] = useState<number | string>(18000);
+  const [maxSalary, setMaxSalary] = useState<number | string>(30000);
+  const [description, setDescription] = useState('');
   const [shiftType, setShiftType] = useState<'day' | 'night' | 'rotational' | 'any'>('rotational');
   const [skillInput, setSkillInput] = useState('');
   const [requiredSkills, setRequiredSkills] = useState<string[]>([
@@ -92,8 +93,9 @@ export function NewJobClient() {
           openings: Number(openings),
           min_exp_years: Number(minExp),
           max_exp_years: Number(maxExp),
-          min_salary: Number(minSalary),
-          max_salary: Number(maxSalary),
+          min_salary: minSalary !== '' && Number(minSalary) > 0 ? Number(minSalary) : null,
+          max_salary: maxSalary !== '' && Number(maxSalary) > 0 ? Number(maxSalary) : null,
+          description: description.trim(),
           shift_type: shiftType,
           required_skills: requiredSkills,
           required_languages: ['Hindi', 'English'],
@@ -103,7 +105,7 @@ export function NewJobClient() {
             weights,
             criteria: {
               preferred_cities: [city],
-              max_acceptable_salary: Number(maxSalary) * 1.15,
+              max_acceptable_salary: maxSalary ? Number(maxSalary) * 1.15 : undefined,
               max_notice_days: 30,
               mandatory_skills: requiredSkills.slice(0, 1),
             },
@@ -300,15 +302,14 @@ export function NewJobClient() {
 
             <div>
               <label className="block font-bold uppercase text-secondary tracking-wider mb-1.5">
-                Monthly Salary Budget Range (₹)
+                Monthly Salary Budget Range (₹) <span className="text-[10px] text-muted font-normal lowercase">(optional / leave blank for company standards)</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
                   step={1000}
-                  min={5000}
                   value={minSalary}
-                  onChange={(e) => setMinSalary(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setMinSalary(e.target.value === '' ? '' : parseInt(e.target.value))}
                   placeholder="Min ₹"
                   className="w-full text-sm rounded-xl border border-border p-3 bg-input-bg text-primary focus:ring-2 focus:ring-brand focus:outline-hidden"
                 />
@@ -316,9 +317,8 @@ export function NewJobClient() {
                 <input
                   type="number"
                   step={1000}
-                  min={5000}
                   value={maxSalary}
-                  onChange={(e) => setMaxSalary(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setMaxSalary(e.target.value === '' ? '' : parseInt(e.target.value))}
                   placeholder="Max ₹"
                   className="w-full text-sm rounded-xl border border-border p-3 bg-input-bg text-primary focus:ring-2 focus:ring-brand focus:outline-hidden"
                 />
@@ -370,6 +370,27 @@ export function NewJobClient() {
                   </span>
                 ))}
               </div>
+            </div>
+
+            <div className="sm:col-span-2 pt-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block font-bold uppercase text-secondary tracking-wider">
+                  Full Job Description
+                </label>
+                <span className="text-[11px] font-mono text-muted">
+                  {description.length} characters
+                </span>
+              </div>
+              <textarea
+                rows={12}
+                placeholder="Enter or paste the complete job description (about company, duties, responsibilities, qualifications, benefits, etc.)..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full text-xs font-mono rounded-xl border border-border p-3.5 bg-input-bg text-primary placeholder:text-muted focus:ring-2 focus:ring-brand focus:outline-hidden leading-relaxed"
+              />
+              <p className="text-[11px] text-muted mt-1">
+                Full structured text shown to recruiters in the View Details modal and accessible for candidates.
+              </p>
             </div>
           </div>
         </div>

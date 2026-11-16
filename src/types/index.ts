@@ -120,8 +120,8 @@ export interface Job {
   openings: number;
   min_exp_years: number;
   max_exp_years: number;
-  min_salary: number;
-  max_salary: number;
+  min_salary?: number | null;
+  max_salary?: number | null;
   shift_type: ShiftType;
   required_skills: string[];
   required_languages: string[];
@@ -130,6 +130,7 @@ export interface Job {
   created_at: string;
   updated_at?: string;
   scoring_rules?: ScoringRules;
+  description?: string;
 }
 
 export interface ScoringWeights {

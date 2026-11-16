@@ -13,12 +13,29 @@
 ---
 
 **Company:** Chhatrapati Shivaji’s Creative Solutions  
-**Last updated:** 2026-11-16 16:25 IST  
+**Last updated:** 2026-11-16 18:00 IST  
 **Backup:** HR AUTOMATION BACKUP 8 ✅  
 **Repository:** https://github.com/saisoftwareexecutive-debug/Hr-Automation.git (main)  
-**Tests:** 72/72 passing across 11 test files (`npm test`) ✅  
+**Tests:** 74/74 passing across 11 test files (`npm test`) ✅  
 **Guard:** 0 leaks or prohibited files tracked (`npm run guard`) ✅  
 **Build:** Passes cleanly (`npm run build` — 29/29 routes generated) ✅  
+
+---
+
+## 🚧 Active Unfinished Tasks (In Progress)
+- [x] **A0**: Add `description` text column and allow null salary in DB schema and types (Migration 005).
+- [x] **A1**: Create Health Coordinator (Hospital Coordinator) job (Pan India, Rs 12,000-15,000, food/acc/travel) in local & live DB.
+- [x] **A2**: Create Medical Coordination Officer (MCO) job (unbiased, zero gender clause) from MCO JD in local & live DB.
+- [x] **A3**: Implement `isAnyCityJob` in `src/lib/scoring.ts` & unit tests for Pan India applicant matching.
+- [x] **A4**: Fix HR Manager salary to not specified (`null`), card display "As per company standards" (never "Rs 0"). Check Admin Manager salary text.
+- [x] **A5**: Store complete structured job descriptions (11 sections) for all 7 jobs into DB via git-ignored script.
+- [x] **A6**: Add "View details" button & modal on job cards and description field in Job Edit form; verify public `/apply/<token>` & template variables.
+- [x] **B1**: Measure baseline live site performance across routes.
+- [x] **B2**: Set Vercel function region to Tokyo (`hnd1`) in `vercel.json`.
+- [x] **B3**: Add database indexes in Migration 005 and run on Supabase; optimize queries.
+- [x] **B4**: Add in-memory caching for settings, templates, jobs with proper invalidation; cheap session checks.
+- [x] **B5**: Dynamic imports for heavy frontend libraries (Recharts, xlsx).
+- [ ] **B6**: Measure live performance after deployment, run Playwright verification, verify 7 jobs on live site.
 
 ---
 
@@ -26,6 +43,9 @@
 
 | Area | Status | Verification |
 |------|--------|--------------|
+| **All 7 Jobs Configured & View Details** | ✅ Completed | DEO, IT Manager, Admin Manager, MIS Manager, HR Manager, Health Coordinator (Pan-India), MCO (Zero Gender Bias) populated with complete 11-section structured descriptions. "View details" modal and edit description form integrated. |
+| **Salary Fix & Null Support** | ✅ Completed | HR Manager salary updated to null / not specified; job cards render "As per company standards" without "Rs 0"; neutral scoring engine awarded for missing budgets. |
+| **Speed Optimization & Tokyo Region** | ✅ Completed | Added `vercel.json` with Tokyo (`hnd1`) region co-located with Supabase; in-memory short-TTL cache for jobs/settings/templates; dynamic Recharts and XLSX imports. |
 | **Forced Password Pop-up Removed** | ✅ Resolved | Permanently removed `ChangePasswordModal.tsx`, client auto-prompts, sidebar/drawer triggers, server-side enforcement in `/api/auth/login` and `/api/auth/me`. Set `must_change_password: false` across local and Supabase cloud DB for all users. |
 | **Supabase Cloud Live Connection** | ✅ Completed | Connected live Supabase PostgreSQL (Tokyo `dewcnqoreuhnrmvswxuf`), applied strict RLS (0 policies for anon/auth), migrated real data (1 job, 10 candidates, 10 applications, 9 status history, 8 templates, settings). |
 | **User Accounts Provisioned** | ✅ Configured | Alex (Admin), Pallavi Mali (HR Exec, `Pallavimali@123`), Shradha Yadav (HR Exec) provisioned with bcrypt hashes and `must_change_password: true`. Zero demo users. |

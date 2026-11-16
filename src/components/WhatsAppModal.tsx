@@ -138,9 +138,10 @@ export function WhatsAppModal({
   const token = currentApp.token;
 
   // Extra variable substitutions
-  const salaryRange = currentApp.job
-    ? `₹${(currentApp.job.min_salary / 1000).toFixed(0)}k - ₹${(currentApp.job.max_salary / 1000).toFixed(0)}k`
-    : 'Competitive';
+  const salaryRange =
+    currentApp.job && currentApp.job.max_salary && Number(currentApp.job.max_salary) > 0
+      ? `₹${((currentApp.job.min_salary || 0) / 1000).toFixed(0)}k - ₹${(Number(currentApp.job.max_salary) / 1000).toFixed(0)}k`
+      : 'As per company standards';
 
   const extraContext = {
     company_name: settings?.company_name || COMPANY_NAME,

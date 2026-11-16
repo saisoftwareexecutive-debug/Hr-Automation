@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
-import * as XLSX from 'xlsx';
 import { Application, ApplicationStatus, Job, UserRole } from '@/types';
 import { ScoreBadge } from '@/components/ScoreBadge';
 import { WhatsAppModal } from '@/components/WhatsAppModal';
@@ -327,7 +326,7 @@ export function CandidateTableClient({
   };
 
   // Export to Excel / CSV with official company branding & UTF-8 BOM
-  const handleExport = (format: 'xlsx' | 'csv', shortlistOnly = false) => {
+  const handleExport = async (format: 'xlsx' | 'csv', shortlistOnly = false) => {
     const listToExport = shortlistOnly
       ? filteredApps.filter((a) => a.status === 'shortlisted' || (typeof a.score === 'number' && a.score >= 85))
       : filteredApps;
@@ -336,6 +335,8 @@ export function CandidateTableClient({
       toast.warning('No candidates found to export with current filters.');
       return;
     }
+
+    const XLSX = await import('xlsx');
 
     const exportRows = listToExport.map((app, index) => ({
       'Company': COMPANY_NAME,

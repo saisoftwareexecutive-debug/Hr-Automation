@@ -29,11 +29,45 @@ function getClient() {
   return supabaseAdmin;
 }
 
+// In-Memory Fast Cache for read-heavy entities (Jobs, Settings, Templates)
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+const repoCache = new Map<string, CacheEntry<any>>();
+
+function getCached<T>(key: string): T | null {
+  const entry = repoCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    repoCache.delete(key);
+    return null;
+  }
+  return entry.data;
+}
+
+function setCached<T>(key: string, data: T, ttlMs: number): void {
+  repoCache.set(key, { data, expiresAt: Date.now() + ttlMs });
+}
+
+export function invalidateCache(keyPrefix?: string): void {
+  if (!keyPrefix) {
+    repoCache.clear();
+    return;
+  }
+  repoCache.forEach((_, k) => {
+    if (k.startsWith(keyPrefix)) repoCache.delete(k);
+  });
+}
+
 // -------------------------------------------------------------
 // JOBS & SCORING RULES
 // -------------------------------------------------------------
 
 export async function getJobs(): Promise<Job[]> {
+  const cached = getCached<Job[]>('jobs:all');
+  if (cached) return cached;
+
   const supabase = getClient();
   const { data: jobsData, error: jobsError } = await supabase
     .from('jobs')
@@ -45,7 +79,7 @@ export async function getJobs(): Promise<Job[]> {
     return [];
   }
 
-  return (jobsData || []).map((row: any) => {
+  const jobs: Job[] = (jobsData || []).map((row: any) => {
     const rules = Array.isArray(row.scoring_rules) ? row.scoring_rules[0] : row.scoring_rules;
     return {
       id: row.id,
@@ -57,12 +91,13 @@ export async function getJobs(): Promise<Job[]> {
       openings: Number(row.openings),
       min_exp_years: Number(row.min_exp_years),
       max_exp_years: Number(row.max_exp_years),
-      min_salary: Number(row.min_salary),
-      max_salary: Number(row.max_salary),
+      min_salary: row.min_salary != null ? Number(row.min_salary) : null,
+      max_salary: row.max_salary != null ? Number(row.max_salary) : null,
       shift_type: row.shift_type,
       required_skills: row.required_skills || [],
       required_languages: row.required_languages || [],
       status: row.status,
+      description: row.description || undefined,
       created_by: row.created_by,
       created_at: row.created_at,
       updated_at: row.updated_at,
@@ -78,6 +113,9 @@ export async function getJobs(): Promise<Job[]> {
         : undefined,
     };
   });
+
+  setCached('jobs:all', jobs, 10_000);
+  return jobs;
 }
 
 export async function getJobById(id: string): Promise<Job | null> {
@@ -101,12 +139,13 @@ export async function getJobById(id: string): Promise<Job | null> {
     openings: Number(data.openings),
     min_exp_years: Number(data.min_exp_years),
     max_exp_years: Number(data.max_exp_years),
-    min_salary: Number(data.min_salary),
-    max_salary: Number(data.max_salary),
+    min_salary: data.min_salary != null ? Number(data.min_salary) : null,
+    max_salary: data.max_salary != null ? Number(data.max_salary) : null,
     shift_type: data.shift_type,
     required_skills: data.required_skills || [],
     required_languages: data.required_languages || [],
     status: data.status,
+    description: data.description || undefined,
     created_by: data.created_by,
     created_at: data.created_at,
     updated_at: data.updated_at,
@@ -148,12 +187,13 @@ export async function createJob(jobData: Omit<Job, 'id' | 'created_at'>): Promis
       openings: jobFields.openings,
       min_exp_years: jobFields.min_exp_years,
       max_exp_years: jobFields.max_exp_years,
-      min_salary: jobFields.min_salary,
-      max_salary: jobFields.max_salary,
+      min_salary: jobFields.min_salary != null ? jobFields.min_salary : null,
+      max_salary: jobFields.max_salary != null ? jobFields.max_salary : null,
       shift_type: jobFields.shift_type,
       required_skills: jobFields.required_skills || [],
       required_languages: jobFields.required_languages || ['Hindi', 'English'],
       status: jobFields.status || 'active',
+      description: jobFields.description || null,
       created_by: jobFields.created_by || 'HR Admin',
       created_at: now,
       updated_at: now,
@@ -161,8 +201,41 @@ export async function createJob(jobData: Omit<Job, 'id' | 'created_at'>): Promis
     .select()
     .single();
 
-  if (jobErr) {
-    throw new Error(`Failed to create job in Supabase: ${jobErr.message}`);
+  let finalJobErr = jobErr;
+  let finalJobRow = jobRow;
+
+  if (jobErr && jobErr.code === '42703' && jobFields.description) {
+    // Description column not added to PostgreSQL yet; fallback without description column
+    const fallbackRes = await supabase
+      .from('jobs')
+      .insert({
+        id,
+        title: jobFields.title,
+        department: jobFields.department || 'Operations',
+        city: jobFields.city,
+        location: trimmedLocation || null,
+        map_url: mapUrl || null,
+        openings: jobFields.openings,
+        min_exp_years: jobFields.min_exp_years,
+        max_exp_years: jobFields.max_exp_years,
+        min_salary: jobFields.min_salary != null ? jobFields.min_salary : null,
+        max_salary: jobFields.max_salary != null ? jobFields.max_salary : null,
+        shift_type: jobFields.shift_type,
+        required_skills: jobFields.required_skills || [],
+        required_languages: jobFields.required_languages || ['Hindi', 'English'],
+        status: jobFields.status || 'active',
+        created_by: jobFields.created_by || 'HR Admin',
+        created_at: now,
+        updated_at: now,
+      })
+      .select()
+      .single();
+    finalJobErr = fallbackRes.error;
+    finalJobRow = fallbackRes.data;
+  }
+
+  if (finalJobErr) {
+    throw new Error(`Failed to create job in Supabase: ${finalJobErr.message}`);
   }
 
   const defaultWeights = incomingRules?.weights || {
@@ -195,6 +268,7 @@ export async function createJob(jobData: Omit<Job, 'id' | 'created_at'>): Promis
     .select()
     .single();
 
+  invalidateCache('jobs');
   return {
     ...jobData,
     id,
@@ -227,14 +301,21 @@ export async function updateJob(id: string, updates: Partial<Job>): Promise<Job 
   if (fields.openings !== undefined) updatePayload.openings = fields.openings;
   if (fields.min_exp_years !== undefined) updatePayload.min_exp_years = fields.min_exp_years;
   if (fields.max_exp_years !== undefined) updatePayload.max_exp_years = fields.max_exp_years;
-  if (fields.min_salary !== undefined) updatePayload.min_salary = fields.min_salary;
-  if (fields.max_salary !== undefined) updatePayload.max_salary = fields.max_salary;
+  if (fields.min_salary !== undefined) updatePayload.min_salary = fields.min_salary != null ? fields.min_salary : null;
+  if (fields.max_salary !== undefined) updatePayload.max_salary = fields.max_salary != null ? fields.max_salary : null;
   if (fields.shift_type !== undefined) updatePayload.shift_type = fields.shift_type;
   if (fields.required_skills !== undefined) updatePayload.required_skills = fields.required_skills;
   if (fields.required_languages !== undefined) updatePayload.required_languages = fields.required_languages;
   if (fields.status !== undefined) updatePayload.status = fields.status;
+  if (fields.description !== undefined) updatePayload.description = fields.description || null;
 
-  const { error } = await supabase.from('jobs').update(updatePayload).eq('id', id);
+  let { error } = await supabase.from('jobs').update(updatePayload).eq('id', id);
+  if (error && error.code === '42703' && updatePayload.description !== undefined) {
+    // If description column does not exist yet, retry without description
+    delete updatePayload.description;
+    const retry = await supabase.from('jobs').update(updatePayload).eq('id', id);
+    error = retry.error;
+  }
   if (error) {
     console.error('Supabase updateJob error:', error);
     return null;
@@ -244,6 +325,7 @@ export async function updateJob(id: string, updates: Partial<Job>): Promise<Job 
     await updateScoringRules(id, incomingRules);
   }
 
+  invalidateCache('jobs');
   return getJobById(id);
 }
 
@@ -294,6 +376,8 @@ export async function deleteJob(
     location: existingJob.location,
     deletedApplicantsCount: deletedApplications.length,
   });
+
+  invalidateCache('jobs');
 
   return {
     success: true,
@@ -355,6 +439,7 @@ export async function restoreJob(
     restoredApplicantsCount: applications.length,
   });
 
+  invalidateCache('jobs');
   return true;
 }
 
@@ -1082,6 +1167,7 @@ export async function restoreCandidates(
     applicationCount: backup.applications.length,
   });
 
+  invalidateCache('jobs');
   return true;
 }
 
@@ -1373,11 +1459,14 @@ export async function deleteUser(userId: string, adminEmail: string): Promise<bo
 // -------------------------------------------------------------
 
 export async function getCompanySettings(): Promise<CompanySettings> {
+  const cached = getCached<CompanySettings>('settings');
+  if (cached) return cached;
+
   const supabase = getClient();
   const { data, error } = await supabase.from('company_settings').select('*').maybeSingle();
 
   if (error || !data) {
-    return {
+    const fallbackSettings: CompanySettings = {
       company_name: COMPANY_NAME,
       tagline: COMPANY_TAGLINE,
       hr_name: 'Alex',
@@ -1387,9 +1476,11 @@ export async function getCompanySettings(): Promise<CompanySettings> {
       inactivity_timeout_minutes: 30,
       daily_target: 50,
     };
+    setCached('settings', fallbackSettings, 30_000);
+    return fallbackSettings;
   }
 
-  return {
+  const settings: CompanySettings = {
     company_name: data.company_name || COMPANY_NAME,
     tagline: data.tagline || COMPANY_TAGLINE,
     hr_name: data.hr_name,
@@ -1402,6 +1493,8 @@ export async function getCompanySettings(): Promise<CompanySettings> {
     daily_target: data.daily_target || 50,
     updated_at: data.updated_at,
   };
+  setCached('settings', settings, 30_000);
+  return settings;
 }
 
 export async function updateCompanySettings(
@@ -1427,6 +1520,7 @@ export async function updateCompanySettings(
     });
   }
 
+  invalidateCache('settings');
   await logAuditEvent(userEmail, 'COMPANY_SETTINGS_UPDATED', 'company_settings', undefined, settings);
   return updated;
 }
@@ -1436,6 +1530,9 @@ export async function updateCompanySettings(
 // -------------------------------------------------------------
 
 export async function getTemplates(): Promise<MessageTemplate[]> {
+  const cached = getCached<MessageTemplate[]>('templates:all');
+  if (cached) return cached;
+
   const supabase = getClient();
   const { data, error } = await supabase
     .from('message_templates')
@@ -1443,7 +1540,9 @@ export async function getTemplates(): Promise<MessageTemplate[]> {
     .order('created_at', { ascending: false });
 
   if (error) return [];
-  return data || [];
+  const templates = data || [];
+  setCached('templates:all', templates, 30_000);
+  return templates;
 }
 
 export async function getActiveTemplate(
@@ -1545,6 +1644,7 @@ export async function saveTemplateVersion(
     throw new Error(`Failed to save template version: ${error?.message}`);
   }
 
+  invalidateCache('templates');
   await logAuditEvent(userEmail, 'TEMPLATE_SAVED_VERSION', 'message_template', id, {
     template_type: data.template_type,
     language: data.language,
@@ -1607,6 +1707,7 @@ export async function setActiveTemplate(templateId: string, userEmail: string): 
     .single();
 
   await logAuditEvent(userEmail, 'TEMPLATE_ACTIVATED', 'template', templateId);
+  invalidateCache('templates');
   return updated!;
 }
 
@@ -1614,6 +1715,7 @@ export async function deleteTemplateVersion(templateId: string, adminEmail: stri
   const supabase = getClient();
   const { error } = await supabase.from('message_templates').delete().eq('id', templateId);
   if (!error) {
+    invalidateCache('templates');
     await logAuditEvent(adminEmail, 'TEMPLATE_DELETED', 'template', templateId);
     return true;
   }

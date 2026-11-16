@@ -323,7 +323,7 @@ export async function createJob(jobData: Omit<Job, 'id' | 'created_at'>): Promis
       },
       criteria: {
         preferred_cities: [jobData.city],
-        max_acceptable_salary: jobData.max_salary,
+        max_acceptable_salary: jobData.max_salary || 50000,
         max_notice_days: 30,
         mandatory_skills: jobData.required_skills.slice(0, 2),
       },

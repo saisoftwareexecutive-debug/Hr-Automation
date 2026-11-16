@@ -39,6 +39,7 @@ export function JobEditClient({ job, candidateCount, userRole = 'hr_executive' }
   const [maxExp, setMaxExp] = useState(job.max_exp_years);
   const [minSalary, setMinSalary] = useState(job.min_salary);
   const [maxSalary, setMaxSalary] = useState(job.max_salary);
+  const [description, setDescription] = useState(job.description || '');
   const [shiftType, setShiftType] = useState(job.shift_type);
   const [status, setStatus] = useState(job.status);
 
@@ -112,8 +113,9 @@ export function JobEditClient({ job, candidateCount, userRole = 'hr_executive' }
           openings: Number(openings),
           min_exp_years: Number(minExp),
           max_exp_years: Number(maxExp),
-          min_salary: Number(minSalary),
-          max_salary: Number(maxSalary),
+          min_salary: minSalary ? Number(minSalary) : null,
+          max_salary: maxSalary ? Number(maxSalary) : null,
+          description: description.trim(),
           shift_type: shiftType,
           status,
           required_skills: requiredSkills,
@@ -334,22 +336,24 @@ export function JobEditClient({ job, candidateCount, userRole = 'hr_executive' }
 
             <div>
               <label className="block font-bold uppercase text-secondary tracking-wider mb-1.5">
-                Monthly Salary Range (₹)
+                Monthly Salary Range (₹) <span className="text-[10px] text-muted font-normal lowercase">(optional / leave blank for company standards)</span>
               </label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
                   step={1000}
-                  value={minSalary}
-                  onChange={(e) => setMinSalary(parseInt(e.target.value) || 0)}
+                  placeholder="Min ₹"
+                  value={minSalary ?? ''}
+                  onChange={(e) => setMinSalary(e.target.value === '' ? ('' as any) : parseInt(e.target.value))}
                   className="w-full text-sm rounded-xl border border-border p-3 bg-input-bg text-primary focus:ring-2 focus:ring-brand focus:outline-hidden"
                 />
                 <span className="text-muted">to</span>
                 <input
                   type="number"
                   step={1000}
-                  value={maxSalary}
-                  onChange={(e) => setMaxSalary(parseInt(e.target.value) || 0)}
+                  placeholder="Max ₹"
+                  value={maxSalary ?? ''}
+                  onChange={(e) => setMaxSalary(e.target.value === '' ? ('' as any) : parseInt(e.target.value))}
                   className="w-full text-sm rounded-xl border border-border p-3 bg-input-bg text-primary focus:ring-2 focus:ring-brand focus:outline-hidden"
                 />
               </div>
@@ -415,6 +419,27 @@ export function JobEditClient({ job, candidateCount, userRole = 'hr_executive' }
                   </span>
                 ))}
               </div>
+            </div>
+
+            <div className="sm:col-span-2 pt-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block font-bold uppercase text-secondary tracking-wider">
+                  Full Job Description
+                </label>
+                <span className="text-[11px] font-mono text-muted">
+                  {description.length} characters
+                </span>
+              </div>
+              <textarea
+                rows={12}
+                placeholder="Enter or paste the complete job description (about company, duties, responsibilities, qualifications, benefits, etc.)..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full text-xs font-mono rounded-xl border border-border p-3.5 bg-input-bg text-primary placeholder:text-muted focus:ring-2 focus:ring-brand focus:outline-hidden leading-relaxed"
+              />
+              <p className="text-[11px] text-muted mt-1">
+                Full structured text shown to recruiters in the View Details modal and accessible for candidates.
+              </p>
             </div>
           </div>
         </div>

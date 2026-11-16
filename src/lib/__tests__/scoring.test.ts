@@ -102,6 +102,59 @@ describe('Fair-Hiring Scoring Engine', () => {
     expect(result.totalScore).toBeLessThan(90);
   });
 
+  it('awards full city score for Pan-India or wildcard job locations', () => {
+    const panIndiaJob: Job = {
+      ...sampleJob,
+      id: 'job-pan-india',
+      city: 'Pan India',
+    };
+    const answersAnywhere: FormAnswers = {
+      id: 'ans-pan-1',
+      application_id: 'app-pan-1',
+      current_city: 'Nagpur', // Different city, but job is Pan India
+      experience_years: 2,
+      matched_skills: ['Customer Support', 'Chat Support', 'CRM', 'Problem Solving'],
+      expected_salary: 25000,
+      notice_period_days: 0,
+      shift_preference: 'rotational',
+      languages: ['Hindi', 'English'],
+      consent_given: true,
+      consent_text: 'DPDP consent',
+      submitted_at: new Date().toISOString(),
+    };
+
+    const result = calculateCandidateScore(panIndiaJob, sampleRules, answersAnywhere);
+    expect(result.breakdown.city_score).toBe(20);
+    expect(result.breakdown.notes.some((n) => n.includes('Pan-India/Flexible posting'))).toBe(true);
+  });
+
+  it('awards neutral full salary score when job salary is null or not specified', () => {
+    const unbudgetedJob: Job = {
+      ...sampleJob,
+      id: 'job-no-salary',
+      min_salary: null,
+      max_salary: null,
+    };
+    const answers: FormAnswers = {
+      id: 'ans-sal-1',
+      application_id: 'app-sal-1',
+      current_city: 'Bengaluru',
+      experience_years: 2,
+      matched_skills: ['Customer Support', 'Chat Support', 'CRM', 'Problem Solving'],
+      expected_salary: 80000, // Even high expectation
+      notice_period_days: 0,
+      shift_preference: 'rotational',
+      languages: ['Hindi', 'English'],
+      consent_given: true,
+      consent_text: 'DPDP consent',
+      submitted_at: new Date().toISOString(),
+    };
+
+    const result = calculateCandidateScore(unbudgetedJob, sampleRules, answers);
+    expect(result.breakdown.salary_score).toBe(15); // Full 15 pts neutral
+    expect(result.breakdown.notes.some((n) => n.includes('Salary as per company standards: neutral score awarded'))).toBe(true);
+  });
+
   it('respects custom scoring weights defined by Admin', () => {
     const customRules: ScoringRules = {
       id: 'rule-custom',

@@ -16,8 +16,21 @@ import {
   Upload,
   AlertCircle,
 } from 'lucide-react';
-import { DashboardCharts } from '@/components/DashboardCharts';
+import dynamicImport from 'next/dynamic';
 import { ScoreBadge } from '@/components/ScoreBadge';
+
+const DashboardCharts = dynamicImport(
+  () => import('@/components/DashboardCharts').then((mod) => mod.DashboardCharts),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid lg:grid-cols-2 gap-6 animate-pulse">
+        <div className="h-72 rounded-3xl bg-surface border border-border" />
+        <div className="h-72 rounded-3xl bg-surface border border-border" />
+      </div>
+    ),
+  }
+);
 
 export const dynamic = 'force-dynamic';
 

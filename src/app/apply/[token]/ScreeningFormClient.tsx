@@ -48,7 +48,7 @@ export function ScreeningFormClient({
   );
   const [expectedSalary, setExpectedSalary] = useState(
     application.form_answers?.expected_salary?.toString() ||
-      (job ? ((job.min_salary + job.max_salary) / 2).toString() : '25000')
+      (job && job.min_salary != null && job.max_salary != null ? ((job.min_salary + job.max_salary) / 2).toString() : '25000')
   );
   const [noticePeriodDays, setNoticePeriodDays] = useState(
     application.form_answers?.notice_period_days?.toString() || '0'

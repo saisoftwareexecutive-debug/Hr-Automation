@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Job Descriptions & View Details Modal**: Added "View details" button and modal on every job card displaying complete 11-section structured descriptions with mobile-friendly typography and light/dark theme support.
+- **Job Creation & Editing**: Added Full Job Description textarea and optional/nullable salary support in Job Edit (`/jobs/[id]`) and New Job (`/jobs/new`) forms.
+- **Pan-India Scoring (`isAnyCityJob`)**: Added flexible city matching in `src/lib/scoring.ts` awarding full city weight for Pan-India postings, and neutral scoring for unbudgeted roles. Added unit tests in `src/lib/__tests__/scoring.test.ts`.
+- **Database Schema Migration 005**: Added `005_job_description_and_indexes.sql` with `description TEXT`, nullable `min_salary`/`max_salary`, and 7 query performance indexes. Updated `supabase/_bundle.sql`.
+- **Vercel Tokyo Region Optimization**: Added `vercel.json` configuring Serverless Functions in Tokyo (`hnd1`) co-located with Supabase PostgreSQL to eliminate cross-continent proxy latency hops.
+- **In-Memory Repository Caching**: Added high-speed in-memory TTL caching in `src/lib/db/supabaseRepo.ts` for jobs, company settings, and templates with automatic cache invalidation upon writes.
+- **Dynamic Imports**: Lazy-loaded `recharts` (`DashboardCharts`) on the dashboard and dynamically imported `xlsx` on-demand for candidate directory exports, reducing initial bundle payloads.
+
+### Changed
+- **Salary Card Formatting**: Job cards now display "As per company standards" when salary is null or 0, eliminating `"₹0 - ₹0"`.
+- **HR Manager Salary**: Updated HR Manager salary to not specified (`null`) in local JSON and live Supabase database.
+- **All 7 Jobs Configured**: DEO, IT Manager, Admin Manager, MIS Manager, HR Manager, Health Coordinator (Hospital Coordinator), and Medical Coordination Officer (MCO, unbiased zero-gender-clause) populated into database with complete 11-section structured details.
+
+
 ### Removed
 - Permanently removed the forced "Change Account Password" modal pop-up and its component (`src/components/ChangePasswordModal.tsx`).
 - Removed auto-prompt trigger, modal state, sidebar key icon, and mobile drawer password button from `src/components/AppLayoutShell.tsx` and `src/components/UserProfileModal.tsx`.

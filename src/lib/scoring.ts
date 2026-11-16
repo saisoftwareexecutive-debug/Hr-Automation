@@ -43,8 +43,18 @@ export function calculateCandidateScore(
   const jobCityClean = (job.city || '').trim().toLowerCase();
   const candCityClean = (answers.current_city || '').trim().toLowerCase();
   const preferredCities = (criteria.preferred_cities || []).map((c: string) => c.trim().toLowerCase());
+  const isAnyCityJob =
+    jobCityClean === 'pan india' ||
+    jobCityClean === 'any' ||
+    jobCityClean === '*' ||
+    preferredCities.includes('any') ||
+    preferredCities.includes('*') ||
+    preferredCities.includes('pan india');
 
-  if (candCityClean === jobCityClean || preferredCities.includes(candCityClean)) {
+  if (isAnyCityJob) {
+    cityScore = weights.city_weight;
+    notes.push(`Pan-India/Flexible posting: any candidate location matches (+${cityScore.toFixed(1)} pts)`);
+  } else if (candCityClean === jobCityClean || preferredCities.includes(candCityClean)) {
     cityScore = weights.city_weight;
     notes.push(`City match: "${answers.current_city}" matches job location (+${cityScore.toFixed(1)} pts)`);
   } else if (candCityClean.length > 0) {
@@ -101,10 +111,13 @@ export function calculateCandidateScore(
   // 4. Expected Salary vs Budget (Max: weights.salary_weight)
   let salaryScore = 0;
   const expSalary = Number(answers.expected_salary) || 0;
-  const maxBudget = Number(job.max_salary) || 50000;
-  const minBudget = Number(job.min_salary) || 10000;
+  const hasJobBudget = job.max_salary !== undefined && job.max_salary !== null && Number(job.max_salary) > 0;
+  const maxBudget = hasJobBudget ? Number(job.max_salary) : 50000;
 
-  if (expSalary <= 0) {
+  if (!hasJobBudget) {
+    salaryScore = weights.salary_weight;
+    notes.push(`Salary as per company standards: neutral score awarded (+${salaryScore.toFixed(1)} pts)`);
+  } else if (expSalary <= 0) {
     salaryScore = Math.round(weights.salary_weight * 0.5 * 10) / 10;
     notes.push(`Salary expectation not provided (+${salaryScore.toFixed(1)} pts)`);
   } else if (expSalary <= maxBudget) {
