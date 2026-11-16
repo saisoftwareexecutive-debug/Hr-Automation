@@ -1464,7 +1464,7 @@ export async function createUser(
     full_name: data.full_name.trim(),
     role: data.role,
     is_active: true,
-    must_change_password: true,
+    must_change_password: false,
     last_login_at: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -1536,7 +1536,7 @@ export async function resetUserPassword(
   const passwordHash = bcrypt.hashSync(tempPassword, 10);
 
   db.users[index].password_hash = passwordHash;
-  db.users[index].must_change_password = true;
+  db.users[index].must_change_password = false;
   db.users[index].updated_at = new Date().toISOString();
   saveLocalDb(db);
 

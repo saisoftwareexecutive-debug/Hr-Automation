@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       role: user.role,
       loginTime: now,
       lastActiveTime: now,
-      mustChangePassword: user.must_change_password || false,
+      mustChangePassword: false,
     };
 
     const cookieValue = createSessionCookieValue(sessionData);
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     await logAuditEvent(user.email, 'USER_LOGIN_SUCCESS', 'user', user.id, {
       role: user.role,
-      mustChangePassword: user.must_change_password,
+      mustChangePassword: false,
     });
 
     return NextResponse.json({
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         full_name: user.full_name,
         role: user.role,
-        must_change_password: user.must_change_password || false,
+        must_change_password: false,
       },
     });
   } catch (err: any) {

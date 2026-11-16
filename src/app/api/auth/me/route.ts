@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     const updatedSession = {
       ...session,
       lastActiveTime: now,
-      mustChangePassword: dbUser?.must_change_password || false,
+      mustChangePassword: false,
     };
 
     const cookieStore = await cookies();
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
         email: session.email,
         full_name: dbUser?.full_name || session.name,
         role: dbUser?.role || session.role,
-        must_change_password: dbUser?.must_change_password || false,
+        must_change_password: false,
       },
       settings,
     });

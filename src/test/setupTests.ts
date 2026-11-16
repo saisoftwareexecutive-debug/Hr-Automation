@@ -147,7 +147,7 @@ try {
       phone: '+91 98765 01000',
       role: 'admin',
       is_active: true,
-      must_change_password: true,
+      must_change_password: false,
       created_at: new Date().toISOString()
     },
     {
@@ -158,7 +158,7 @@ try {
       phone: '+91 98200 12345',
       role: 'hr_executive',
       is_active: true,
-      must_change_password: true,
+      must_change_password: false,
       created_at: new Date().toISOString()
     },
     {
@@ -169,7 +169,7 @@ try {
       phone: '+91 98200 67890',
       role: 'hr_executive',
       is_active: true,
-      must_change_password: true,
+      must_change_password: false,
       created_at: new Date().toISOString()
     },
     {

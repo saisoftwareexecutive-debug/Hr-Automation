@@ -98,5 +98,5 @@ It will automatically free port 3000, create a daily backup, start the server, a
 - **Row Level Security (RLS)**: Enforced strict RLS on all 15 database tables with zero policies for anon and authenticated roles. Public publishable key requests are denied on every table.
 - **Data Migration**: Migrated 1 Company Settings record, 8 Message Templates, 1 Job with Scoring Rules, 10 Candidates, 10 Applications, and 9 Status History items with zero data loss or mutation.
 - **Repository Sanitization**: Completely removed all users, passwords, and password hashes from git-tracked code (`initialData.ts`, `sampleSeedData.ts` deleted, `supabase/seed.sql` sanitized). Pre-flight security guard (`scripts/guard.mjs`) scans for bcrypt hash patterns.
-- **Production Account Security**: Real accounts provisioned with `must_change_password: true` and rate limits cleared.
+- **Production Account Security**: Real accounts provisioned with `must_change_password: false`; forced password change pop-ups, client triggers, and server blocking enforcement permanently removed. Rate limits and lockouts preserved.
 - **Strict Cloud Storage Mode**: Unconfigured or unreachable Supabase states throw explicit errors and never fall back to local disk storage in production.

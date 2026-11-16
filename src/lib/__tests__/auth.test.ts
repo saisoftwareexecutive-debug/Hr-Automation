@@ -86,4 +86,23 @@ describe('Auth & Session System', () => {
     expect(checkAfter5.isLimited).toBe(true);
     expect(checkAfter5.retryAfterMinutes).toBeGreaterThan(0);
   });
+
+  it('guarantees user with must_change_password flag can use the app normally without blocking', async () => {
+    // Session with mustChangePassword flag does not block decoding or user info
+    const sessionWithFlag: SessionData = {
+      userId: 'user-exec-test',
+      email: 'qa.test@hireflow.internal',
+      name: 'QA Test User',
+      role: 'hr_executive',
+      loginTime: Date.now(),
+      lastActiveTime: Date.now(),
+      mustChangePassword: true,
+    };
+
+    const cookieValue = createSessionCookieValue(sessionWithFlag);
+    const decoded = decodeSessionCookieValue(cookieValue);
+    expect(decoded).not.toBeNull();
+    expect(decoded?.email).toBe('qa.test@hireflow.internal');
+    expect(decoded?.role).toBe('hr_executive');
+  });
 });

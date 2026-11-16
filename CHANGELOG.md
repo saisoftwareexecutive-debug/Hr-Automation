@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- Permanently removed the forced "Change Account Password" modal pop-up and its component (`src/components/ChangePasswordModal.tsx`).
+- Removed auto-prompt trigger, modal state, sidebar key icon, and mobile drawer password button from `src/components/AppLayoutShell.tsx` and `src/components/UserProfileModal.tsx`.
+- Removed forced password change enforcement from authentication routes (`/api/auth/login` and `/api/auth/me`).
+
+### Changed
+- Configured default `must_change_password: false` across user creation and password resets in both local JSON and Supabase cloud repositories.
+- Updated all existing user records in local JSON storage and live Supabase cloud database to `must_change_password: false`.
+- Updated build stamp to `Build 2026-11-16 16:25 IST`.
+
+### Added
+- Regression unit test in `src/lib/__tests__/auth.test.ts` guaranteeing users with legacy flags operate normally without blocking or redirecting.
+
 ### Security & Sanitization
 - Removed all user objects, passwords, and static bcrypt password hashes from git-tracked source code (`src/lib/db/initialData.ts`, `src/lib/db/index.ts`, `supabase/seed.sql`).
 - Permanently deleted legacy demo dataset `src/lib/db/sampleSeedData.ts` to ensure zero mock candidate or hash exposure in public git history.

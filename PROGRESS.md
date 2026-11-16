@@ -13,10 +13,10 @@
 ---
 
 **Company:** Chhatrapati Shivaji’s Creative Solutions  
-**Last updated:** 2026-11-16 12:45 IST  
+**Last updated:** 2026-11-16 16:25 IST  
 **Backup:** HR AUTOMATION BACKUP 8 ✅  
 **Repository:** https://github.com/saisoftwareexecutive-debug/Hr-Automation.git (main)  
-**Tests:** 71/71 passing across 11 test files (`npm test`) ✅  
+**Tests:** 72/72 passing across 11 test files (`npm test`) ✅  
 **Guard:** 0 leaks or prohibited files tracked (`npm run guard`) ✅  
 **Build:** Passes cleanly (`npm run build` — 29/29 routes generated) ✅  
 
@@ -26,6 +26,7 @@
 
 | Area | Status | Verification |
 |------|--------|--------------|
+| **Forced Password Pop-up Removed** | ✅ Resolved | Permanently removed `ChangePasswordModal.tsx`, client auto-prompts, sidebar/drawer triggers, server-side enforcement in `/api/auth/login` and `/api/auth/me`. Set `must_change_password: false` across local and Supabase cloud DB for all users. |
 | **Supabase Cloud Live Connection** | ✅ Completed | Connected live Supabase PostgreSQL (Tokyo `dewcnqoreuhnrmvswxuf`), applied strict RLS (0 policies for anon/auth), migrated real data (1 job, 10 candidates, 10 applications, 9 status history, 8 templates, settings). |
 | **User Accounts Provisioned** | ✅ Configured | Alex (Admin), Pallavi Mali (HR Exec, `Pallavimali@123`), Shradha Yadav (HR Exec) provisioned with bcrypt hashes and `must_change_password: true`. Zero demo users. |
 | **Repository Sanitization** | ✅ Enforced | Completely removed users, password hashes, and demo candidate datasets from git-tracked code (`initialData.ts`, `sampleSeedData.ts` deleted, `seed.sql` sanitized, `guard.mjs` hash scanner added). |

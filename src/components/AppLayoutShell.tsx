@@ -34,7 +34,6 @@ import {
 import { BUILD_STAMP } from '@/lib/version';
 import { COMPANY_NAME } from '@/lib/brand';
 import { SessionData } from '@/lib/auth';
-import { ChangePasswordModal } from './ChangePasswordModal';
 import { UserProfileModal } from './UserProfileModal';
 import { CompanyLogo } from './CompanyLogo';
 import { useToast } from './ToastProvider';
@@ -54,7 +53,6 @@ export function AppLayoutShell({ children }: AppLayoutShellProps) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [user, setUser] = useState<SessionData | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const hasAutoPromptedRef = useRef(false);
 
   // 3-way Theme state
   const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
@@ -62,7 +60,6 @@ export function AppLayoutShell({ children }: AppLayoutShellProps) {
 
   // Modals state
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   // Determine if this is a standalone public page
@@ -147,14 +144,8 @@ export function AppLayoutShell({ children }: AppLayoutShellProps) {
             role: data.user.role,
             loginTime: Date.now(),
             lastActiveTime: Date.now(),
-            mustChangePassword: data.user.must_change_password,
+            mustChangePassword: false,
           });
-
-          // If must change password, open modal once on login (never re-prompt on navigation)
-          if (data.user.must_change_password && !hasAutoPromptedRef.current) {
-            hasAutoPromptedRef.current = true;
-            setPasswordModalOpen(true);
-          }
         } else {
           setUser(null);
           if (!isPublicPage) {
@@ -365,16 +356,6 @@ export function AppLayoutShell({ children }: AppLayoutShellProps) {
                       {user.role === 'admin' ? 'Admin' : 'HR Executive'}
                     </p>
                   </div>
-                )}
-                {!collapsed && (
-                  <button
-                    type="button"
-                    onClick={() => setPasswordModalOpen(true)}
-                    className="p-1 rounded-lg text-muted hover:text-primary hover:bg-surface transition"
-                    title="Change password"
-                  >
-                    <KeyRound className="w-3.5 h-3.5" />
-                  </button>
                 )}
               </div>
             )}
@@ -616,19 +597,9 @@ export function AppLayoutShell({ children }: AppLayoutShellProps) {
                       setMobileDrawerOpen(false);
                       setProfileModalOpen(true);
                     }}
-                    className="flex-1 py-1.5 px-2 bg-surface-hover text-secondary hover:text-primary rounded-lg text-xs font-semibold text-center border border-border"
+                    className="w-full py-1.5 px-2 bg-surface-hover text-secondary hover:text-primary rounded-lg text-xs font-semibold text-center border border-border"
                   >
                     Profile
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMobileDrawerOpen(false);
-                      setPasswordModalOpen(true);
-                    }}
-                    className="flex-1 py-1.5 px-2 bg-surface-hover text-secondary hover:text-primary rounded-lg text-xs font-semibold text-center border border-border"
-                  >
-                    Password
                   </button>
                 </div>
 
@@ -646,22 +617,12 @@ export function AppLayoutShell({ children }: AppLayoutShellProps) {
         </div>
       )}
 
-      {/* User Modals */}
+      {/* User Profile Modal */}
       <UserProfileModal
         isOpen={profileModalOpen}
         onClose={() => setProfileModalOpen(false)}
         user={user}
-        onOpenChangePassword={() => {
-          setProfileModalOpen(false);
-          setPasswordModalOpen(true);
-        }}
         onLogout={handleLogout}
-      />
-
-      <ChangePasswordModal
-        isOpen={passwordModalOpen}
-        onClose={() => setPasswordModalOpen(false)}
-        userEmail={user?.email || ''}
       />
     </div>
   );

@@ -1200,7 +1200,7 @@ export async function createUser(
       role: userData.role,
       password_hash,
       is_active: true,
-      must_change_password: true,
+      must_change_password: false,
       created_at: now,
       updated_at: now,
     })
@@ -1261,7 +1261,7 @@ export async function resetUserPassword(
     .from('users')
     .update({
       password_hash,
-      must_change_password: true,
+      must_change_password: false,
       updated_at: now,
     })
     .eq('id', id);

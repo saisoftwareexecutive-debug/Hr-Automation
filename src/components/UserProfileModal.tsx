@@ -8,7 +8,6 @@ interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: SessionData | null;
-  onOpenChangePassword: () => void;
   onLogout: () => void;
 }
 
@@ -16,7 +15,6 @@ export function UserProfileModal({
   isOpen,
   onClose,
   user,
-  onOpenChangePassword,
   onLogout,
 }: UserProfileModalProps) {
   if (!isOpen || !user) return null;
@@ -69,23 +67,8 @@ export function UserProfileModal({
           <div className="pt-2 space-y-2">
             <button
               type="button"
-              onClick={() => {
-                onClose();
-                onOpenChangePassword();
-              }}
-              className="w-full flex items-center justify-between p-3 rounded-xl border border-border hover:border-brand hover:bg-surface-hover font-semibold text-primary transition"
-            >
-              <div className="flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-brand" />
-                <span>Change Password</span>
-              </div>
-              <span className="text-[11px] text-muted">&rarr;</span>
-            </button>
-
-            <button
-              type="button"
               onClick={onLogout}
-              className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 font-bold transition mt-4"
+              className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 font-bold transition mt-2"
             >
               <LogOut className="w-4 h-4" />
               <span>Log Out of HireFlow</span>
