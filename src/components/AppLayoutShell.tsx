@@ -30,6 +30,7 @@ import {
   ExternalLink,
   Check,
   Activity,
+  Send,
 } from 'lucide-react';
 import { BUILD_STAMP } from '@/lib/version';
 import { COMPANY_NAME } from '@/lib/brand';
@@ -203,6 +204,7 @@ export function AppLayoutShell({ children }: AppLayoutShellProps) {
     { label: 'Pipeline Board', href: '/pipeline', icon: KanbanSquare },
     { label: 'Candidates', href: '/candidates', icon: Users },
     { label: 'WorkIndia Import', href: '/import', icon: Upload },
+    { label: 'Batch Send', href: '/batch-send', icon: Send },
     { label: 'Jobs & Rules', href: '/jobs', icon: Briefcase },
     { label: 'Follow-ups (24h)', href: '/followups', icon: Clock },
     { label: 'Templates & Tones', href: '/templates', icon: FileText },

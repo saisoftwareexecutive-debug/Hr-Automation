@@ -562,6 +562,7 @@ export async function getCandidates(filters?: {
       token: row.token,
       token_expires_at: row.token_expires_at,
       form_sent_at: row.form_sent_at,
+      last_reminder_at: row.last_reminder_at || null,
       replied_at: row.replied_at,
       interview_scheduled_at: row.interview_scheduled_at,
       assigned_to: row.assigned_to,
@@ -693,6 +694,7 @@ export async function saveImportedApplications(apps: Application[]): Promise<voi
       token: app.token,
       token_expires_at: app.token_expires_at,
       form_sent_at: app.form_sent_at || null,
+      last_reminder_at: app.last_reminder_at || null,
       replied_at: app.replied_at || null,
       interview_scheduled_at: app.interview_scheduled_at || null,
       assigned_to: app.assigned_to || null,
@@ -760,6 +762,254 @@ export async function updateApplicationStatus(
   });
 
   return getApplicationById(appId);
+}
+
+export async function batchSendConfirm(params: {
+  applicationId: string;
+  mode: 'screening' | 'reminder';
+  recipientPhone: string;
+  messageBody?: string;
+  authorName: string;
+  authorEmail: string;
+  userRole: string;
+  userId: string;
+}): Promise<{
+  success: boolean;
+  application?: Application;
+  conflict?: boolean;
+  currentStatus?: string;
+  changedBy?: string;
+  error?: string;
+}> {
+  const supabase = getClient();
+  const now = new Date().toISOString();
+
+  // 1. Fetch current application
+  const { data: current, error: fetchErr } = await supabase
+    .from('applications')
+    .select('id, status, assigned_to, replied_at, form_sent_at, candidate_id')
+    .eq('id', params.applicationId)
+    .single();
+
+  if (fetchErr || !current) {
+    return { success: false, error: 'Application not found' };
+  }
+
+  // 2. Permission check: HR Executive can only send for their assigned candidates
+  if (params.userRole !== 'admin' && current.assigned_to && current.assigned_to !== params.userId) {
+    return { success: false, error: 'Unauthorized: Candidate is not assigned to you' };
+  }
+
+  // 3. Stage & concurrency check
+  if (params.mode === 'screening') {
+    if (current.status !== 'new') {
+      return {
+        success: false,
+        conflict: true,
+        currentStatus: current.status,
+        error: `Candidate status is already "${current.status}"`,
+      };
+    }
+
+    const { error: updateErr } = await supabase
+      .from('applications')
+      .update({
+        status: 'form_sent',
+        form_sent_at: now,
+        updated_at: now,
+      })
+      .eq('id', params.applicationId)
+      .eq('status', 'new'); // concurrency lock
+
+    if (updateErr) {
+      return { success: false, error: updateErr.message };
+    }
+
+    // Insert status history
+    await supabase.from('status_history').insert({
+      id: generateUUID(),
+      application_id: params.applicationId,
+      old_status: 'new',
+      new_status: 'form_sent',
+      changed_by: params.authorName,
+      reason: 'Screening form sent via WhatsApp (batch)',
+      created_at: now,
+    });
+
+    // Insert message log
+    await logWhatsAppOrSmsMessage({
+      application_id: params.applicationId,
+      recipient_phone: params.recipientPhone,
+      template_type: 'screening_invite',
+      language: 'en',
+      channel: 'whatsapp',
+      message_body: params.messageBody || 'Screening invite sent via WhatsApp (batch)',
+    });
+
+    // Audit log
+    await logAuditEvent(params.authorEmail, 'BATCH_SEND_CONFIRMED', 'application', params.applicationId, {
+      mode: 'screening',
+      recipientPhone: params.recipientPhone,
+    });
+  } else {
+    // Reminder mode
+    if (current.status !== 'form_sent' || current.replied_at) {
+      return {
+        success: false,
+        conflict: true,
+        currentStatus: current.status,
+        error: current.replied_at ? 'Candidate already replied' : `Candidate status is "${current.status}"`,
+      };
+    }
+
+    // Try updating with last_reminder_at; fallback to updated_at if column not yet cached
+    const updatePayload: any = { updated_at: now };
+    try {
+      updatePayload.last_reminder_at = now;
+      const { error: remErr } = await supabase
+        .from('applications')
+        .update(updatePayload)
+        .eq('id', params.applicationId)
+        .eq('status', 'form_sent');
+
+      if (remErr) {
+        delete updatePayload.last_reminder_at;
+        await supabase
+          .from('applications')
+          .update(updatePayload)
+          .eq('id', params.applicationId)
+          .eq('status', 'form_sent');
+      }
+    } catch {
+      delete updatePayload.last_reminder_at;
+      await supabase
+        .from('applications')
+        .update(updatePayload)
+        .eq('id', params.applicationId);
+    }
+
+    // Insert status history
+    await supabase.from('status_history').insert({
+      id: generateUUID(),
+      application_id: params.applicationId,
+      old_status: 'form_sent',
+      new_status: 'form_sent',
+      changed_by: params.authorName,
+      reason: 'Reminder sent via WhatsApp (batch)',
+      created_at: now,
+    });
+
+    // Insert message log
+    await logWhatsAppOrSmsMessage({
+      application_id: params.applicationId,
+      recipient_phone: params.recipientPhone,
+      template_type: 'reminder_24h',
+      language: 'en',
+      channel: 'whatsapp',
+      message_body: params.messageBody || 'Reminder sent via WhatsApp (batch)',
+    });
+
+    // Audit log
+    await logAuditEvent(params.authorEmail, 'BATCH_REMINDER_CONFIRMED', 'application', params.applicationId, {
+      mode: 'reminder',
+      recipientPhone: params.recipientPhone,
+    });
+  }
+
+  const updated = await getApplicationById(params.applicationId);
+  return { success: true, application: updated || undefined };
+}
+
+export async function batchSendUndo(params: {
+  applicationId: string;
+  mode: 'screening' | 'reminder';
+  authorName: string;
+  authorEmail: string;
+  userRole: string;
+  userId: string;
+}): Promise<{
+  success: boolean;
+  application?: Application;
+  error?: string;
+}> {
+  const supabase = getClient();
+  const now = new Date().toISOString();
+
+  const { data: current, error: fetchErr } = await supabase
+    .from('applications')
+    .select('id, status, assigned_to')
+    .eq('id', params.applicationId)
+    .single();
+
+  if (fetchErr || !current) {
+    return { success: false, error: 'Application not found' };
+  }
+
+  if (params.userRole !== 'admin' && current.assigned_to && current.assigned_to !== params.userId) {
+    return { success: false, error: 'Unauthorized: Candidate is not assigned to you' };
+  }
+
+  if (params.mode === 'screening') {
+    const { error: undoErr } = await supabase
+      .from('applications')
+      .update({
+        status: 'new',
+        form_sent_at: null,
+        updated_at: now,
+      })
+      .eq('id', params.applicationId);
+
+    if (undoErr) {
+      return { success: false, error: undoErr.message };
+    }
+
+    await supabase.from('status_history').insert({
+      id: generateUUID(),
+      application_id: params.applicationId,
+      old_status: 'form_sent',
+      new_status: 'new',
+      changed_by: params.authorName,
+      reason: 'Screening form batch send undone',
+      created_at: now,
+    });
+
+    await logAuditEvent(params.authorEmail, 'BATCH_SEND_UNDONE', 'application', params.applicationId, {
+      mode: 'screening',
+    });
+  } else {
+    // Reminder undo
+    try {
+      await supabase
+        .from('applications')
+        .update({
+          last_reminder_at: null,
+          updated_at: now,
+        })
+        .eq('id', params.applicationId);
+    } catch {
+      await supabase
+        .from('applications')
+        .update({ updated_at: now })
+        .eq('id', params.applicationId);
+    }
+
+    await supabase.from('status_history').insert({
+      id: generateUUID(),
+      application_id: params.applicationId,
+      old_status: 'form_sent',
+      new_status: 'form_sent',
+      changed_by: params.authorName,
+      reason: 'Reminder batch send undone',
+      created_at: now,
+    });
+
+    await logAuditEvent(params.authorEmail, 'BATCH_REMINDER_UNDONE', 'application', params.applicationId, {
+      mode: 'reminder',
+    });
+  }
+
+  const updated = await getApplicationById(params.applicationId);
+  return { success: true, application: updated || undefined };
 }
 
 export async function submitCandidateForm(
@@ -1081,18 +1331,70 @@ export async function getDailyProgress(dateStr?: string): Promise<{
   const users = await getUsers();
   const settings = await getCompanySettings();
   const dailyTarget = settings.daily_target || 25;
+  const supabase = getClient();
 
-  const userProgressList: DailyProgress[] = users.map((u) => ({
-    user_id: u.id,
-    user_name: u.full_name,
-    date: today,
-    messages_sent: 0,
-    forms_received: 0,
-    calls_made: 0,
-    interviews_booked: 0,
-    selected: 0,
-    target: dailyTarget,
-  }));
+  // Query messages sent today from messages_log
+  let messagesCount = 0;
+  let messages: { id: string; sent_at: string; application_id: string }[] = [];
+  try {
+    const { data } = await supabase
+      .from('messages_log')
+      .select('id, sent_at, application_id')
+      .gte('sent_at', `${today}T00:00:00Z`);
+    if (data) {
+      messages = data;
+      messagesCount = data.length;
+    }
+  } catch (err) {
+    console.warn('messages_log query fallback:', err);
+  }
+
+  // Get applications to associate progress by assigned user
+  let allApps: Application[] = [];
+  try {
+    allApps = await getCandidates();
+  } catch (err) {
+    console.warn('getCandidates query fallback:', err);
+  }
+
+  const userProgressList: DailyProgress[] = users.map((u) => {
+    const assignedApps = allApps.filter((a) => a.assigned_to === u.id);
+    const assignedAppIds = new Set(assignedApps.map((a) => a.id));
+
+    // Messages sent: matched by application assignment, or if no assignment, split/fallback
+    let userMessages = messages.filter(
+      (m) => m.application_id && assignedAppIds.has(m.application_id)
+    ).length;
+
+    // If messages exist but applications are unassigned or user is admin
+    if (userMessages === 0 && messagesCount > 0 && (u.role === 'admin' || assignedApps.length === 0)) {
+      userMessages = messagesCount;
+    }
+
+    const formsReceived = assignedApps.filter(
+      (a) => a.replied_at && a.replied_at.startsWith(today)
+    ).length;
+
+    const interviewsBooked = assignedApps.filter(
+      (a) => a.interview_scheduled_at && a.interview_scheduled_at.startsWith(today)
+    ).length;
+
+    const selected = assignedApps.filter(
+      (a) => a.status === 'selected' && a.updated_at && a.updated_at.startsWith(today)
+    ).length;
+
+    return {
+      user_id: u.id,
+      user_name: u.full_name,
+      date: today,
+      messages_sent: userMessages,
+      forms_received: formsReceived,
+      calls_made: 0,
+      interviews_booked: interviewsBooked,
+      selected: selected,
+      target: dailyTarget,
+    };
+  });
 
   return {
     teamTarget: dailyTarget * users.length,

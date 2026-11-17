@@ -118,3 +118,26 @@ export function normalizeIndianPhone(input: string | number | null | undefined):
     };
   }
 }
+
+/**
+ * Formats a phone number for UI display in standard Indian format: +91 XXXXX XXXXX
+ */
+export function formatIndianPhoneDisplay(input: string | number | null | undefined): string {
+  const parsed = normalizeIndianPhone(input);
+  if (!parsed.isValid || !parsed.nationalNumber) {
+    return String(input || '');
+  }
+  const nat = parsed.nationalNumber;
+  return `+91 ${nat.slice(0, 5)} ${nat.slice(5)}`;
+}
+
+/**
+ * Extracts pure digits with country code for WhatsApp wa.me click-to-chat (e.g. 919876543210)
+ */
+export function getWhatsAppPhoneDigits(input: string | number | null | undefined): string {
+  const parsed = normalizeIndianPhone(input);
+  if (parsed.isValid && parsed.normalized) {
+    return parsed.normalized.replace(/\D/g, '');
+  }
+  return String(input || '').replace(/\D/g, '');
+}

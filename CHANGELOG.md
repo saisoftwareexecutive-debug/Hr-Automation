@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Batch Send Outreach (`/batch-send`)**: Complete 3-step high-velocity WhatsApp outreach wizard (Choose, Send, Summary) utilizing official click-to-chat links (`https://wa.me/`) with reusable named window (`hireflow_whatsapp`), template variables preview, and zero automated bots or scraping.
+- **Batch Send Concurrency & Stage Locking**: Server-side validation rejecting stale/duplicate sends across concurrent tabs and sessions, dual-mode outreach (Screening Form dispatch vs 24h Unreplied Reminder), undo capabilities, wrong-number outcome recording, and 10-send break pacing reminder.
+- **Database Schema Migration 006**: Added `006_batch_send_last_reminder.sql` with `last_reminder_at TIMESTAMPTZ` column and index on `applications` table. Updated `supabase/_bundle.sql`.
+- **Navigation Shortcuts**: Added "Batch Send" sidebar link directly below "WorkIndia Import", "Send forms to these N candidates" shortcut on WorkIndia import success card, and "Send all reminders" link on Follow-ups page.
+- **Unit & Browser Automation Tests**: Added 14 unit test suites in `src/lib/__tests__/batchSend.test.ts` covering phone formatting, WhatsApp URL encoding, concurrency locks, permission boundaries, and public link validation. Added full E2E Puppeteer automation test suite in `scripts/test_batch_send_browser.mjs`.
 - **Job Descriptions & View Details Modal**: Added "View details" button and modal on every job card displaying complete 11-section structured descriptions with mobile-friendly typography and light/dark theme support.
 - **Job Creation & Editing**: Added Full Job Description textarea and optional/nullable salary support in Job Edit (`/jobs/[id]`) and New Job (`/jobs/new`) forms.
 - **Pan-India Scoring (`isAnyCityJob`)**: Added flexible city matching in `src/lib/scoring.ts` awarding full city weight for Pan-India postings, and neutral scoring for unbudgeted roles. Added unit tests in `src/lib/__tests__/scoring.test.ts`.

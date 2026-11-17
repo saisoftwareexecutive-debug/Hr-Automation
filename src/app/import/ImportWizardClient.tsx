@@ -31,6 +31,7 @@ import {
   History,
   Trash2,
   X,
+  Send,
 } from 'lucide-react';
 import Link from 'next/link';
 import clsx from 'clsx';
@@ -877,6 +878,13 @@ export function ImportWizardClient({
                 All candidates have been added to the pipeline for <strong>{selectedJob?.title}</strong>, assigned secure 7-day screening tokens, and ready for WhatsApp screening link dispatch.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <Link
+                  href={`/batch-send?job=${selectedJobId}&mode=screening`}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition"
+                >
+                  <Send className="w-4 h-4" />
+                  Send forms to these {importResult.importedCount} candidates
+                </Link>
                 <Link
                   href={`/pipeline?job=${selectedJobId}`}
                   className="inline-flex items-center gap-1.5 px-5 py-2.5 text-xs font-bold text-white bg-brand hover:bg-brand-hover rounded-xl shadow-xs transition"

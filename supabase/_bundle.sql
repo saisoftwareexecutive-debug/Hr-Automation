@@ -1,6 +1,6 @@
 -- =========================================================================
 -- HireFlow Full Database Schema Bundle
--- Generated: 2026-11-16T12:17:02.541Z
+-- Generated: 2026-11-17T06:34:20.401Z
 -- For Supabase Project: dewcnqoreuhnrmvswxuf (Tokyo, ap-northeast-1)
 -- =========================================================================
 
@@ -446,4 +446,17 @@ CREATE INDEX IF NOT EXISTS idx_applications_assigned_to ON applications(assigned
 CREATE INDEX IF NOT EXISTS idx_applications_created_at ON applications(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_candidates_phone ON candidates(phone);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- -------------------------------------------------------------------------
+-- MIGRATION: 006_batch_send_last_reminder.sql
+-- -------------------------------------------------------------------------
+
+-- Migration 006: Batch Send and Reminder Tracking
+-- Adds last_reminder_at column and index to applications table.
+
+ALTER TABLE applications
+  ADD COLUMN IF NOT EXISTS last_reminder_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_applications_last_reminder_at
+  ON applications(last_reminder_at);
 

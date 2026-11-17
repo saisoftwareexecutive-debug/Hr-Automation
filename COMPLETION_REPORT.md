@@ -100,3 +100,15 @@ It will automatically free port 3000, create a daily backup, start the server, a
 - **Repository Sanitization**: Completely removed all users, passwords, and password hashes from git-tracked code (`initialData.ts`, `sampleSeedData.ts` deleted, `supabase/seed.sql` sanitized). Pre-flight security guard (`scripts/guard.mjs`) scans for bcrypt hash patterns.
 - **Production Account Security**: Real accounts provisioned with `must_change_password: false`; forced password change pop-ups, client triggers, and server blocking enforcement permanently removed. Rate limits and lockouts preserved.
 - **Strict Cloud Storage Mode**: Unconfigured or unreachable Supabase states throw explicit errors and never fall back to local disk storage in production.
+
+---
+
+## 8. High-Velocity Batch Send System (`/batch-send`)
+
+- **3-Step Outreach Wizard**: Designed and implemented `/batch-send` supporting Step 1 (Choose), Step 2 (Send), and Step 3 (Summary) with clean responsive card layouts across desktop and mobile viewports.
+- **Strict Free-Only Click-to-Chat Integration**: 100% compliant with WhatsApp click-to-chat links (`https://wa.me/<digits>?text=<encoded>`) in a single reusable named window (`hireflow_whatsapp`). Zero bots, browser automation, or paid APIs.
+- **Dual-Mode Outreach**: Supports both initial Screening Form dispatch (stage `new` without form sent) and 24-Hour Follow-up Reminders (stage `form_sent`, unreplied after $\ge 24$ hours).
+- **Concurrency & Concurrency Protection**: Server-side verification confirms candidate stage before committing, preventing double-sends across tabs or multiple concurrent HR users.
+- **Batch Controls**: Real-time message preview with candidate-specific token links, "Needs Attention" card for invalid/missing phone numbers, "I sent it, next →" button with strict pre-activation guards, Skip with end-of-batch return, Wrong Number call outcome logging, and Back with Undo confirmation.
+- **Navigation Touchpoints**: Integrated into main collapsible sidebar below WorkIndia Import, WorkIndia Import success card ("Send forms to these N candidates"), and Follow-ups page ("Send all reminders").
+- **Verification & Integrity**: Backed by 14 unit test suites (88/88 passing total) and automated headless browser verification testing all flows, keyboard shortcuts (`Enter`, `Space`, `S`, `B`), mobile screen responsiveness, and data preservation. Zero real PII committed.

@@ -201,6 +201,7 @@ export interface Application {
   token: string;
   token_expires_at: string;
   form_sent_at?: string | null;
+  last_reminder_at?: string | null;
   replied_at?: string | null;
   interview_scheduled_at?: string | null;
   assigned_to?: string | null;        // user id of assigned HR

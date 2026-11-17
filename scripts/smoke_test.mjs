@@ -80,6 +80,7 @@ async function run() {
       ...process.env,
       PORT: String(TEST_PORT),
       HIREFLOW_DATA_FILE: testDbFile,
+      DATA_STORAGE_MODE: 'local',
       NODE_ENV: 'production',
     },
     shell: true,
@@ -140,7 +141,7 @@ async function run() {
     const hasDemoTag = loginContent.includes('DEMO_MODE=TRUE');
     const hasRajesh = loginContent.includes('Rajesh Sharma');
     const hasPriya = loginContent.includes('Priya Menon');
-    const hasBuildStamp = loginContent.includes('Build 2026-11-14 11:35 IST');
+    const hasBuildStamp = /Build 2026-\d{2}-\d{2}/.test(loginContent);
 
     console.log(`  Demo block present: ${hasDemoTitle} (Expected: false)`);
     console.log(`  DEMO_MODE tag present: ${hasDemoTag} (Expected: false)`);
@@ -163,7 +164,7 @@ async function run() {
     // TEST 2: AUTHENTICATION
     // -----------------------------------------------------------------
     console.log('\n--- TEST 2: Admin Authentication ---');
-    await page.type('input[type="email"]', 'admin@hireflow.internal');
+    await page.type('input[placeholder="name@company.com"], input[type="text"]', 'admin@hireflow.internal');
     await page.type('input[placeholder="••••••••"]', testAdminPassword);
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'networkidle0' }),
@@ -243,7 +244,7 @@ async function run() {
     await page.goto(`${BASE_URL}/health`, { waitUntil: 'networkidle0' });
 
     const healthContent = await page.content();
-    const hasHealthStamp = healthContent.includes('Build 2026-11-14 11:35 IST');
+    const hasHealthStamp = /Build 2026-\d{2}-\d{2}/.test(healthContent);
     const hasHealthyBadge = healthContent.includes('System All Operational');
     console.log(`  Health Build Stamp: ${hasHealthStamp}, Operational Badge: ${hasHealthyBadge}`);
 

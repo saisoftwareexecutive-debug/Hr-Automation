@@ -722,6 +722,204 @@ export async function updateApplicationStatus(
   return getApplicationById(applicationId);
 }
 
+export async function batchSendConfirm(params: {
+  applicationId: string;
+  mode: 'screening' | 'reminder';
+  recipientPhone: string;
+  messageBody?: string;
+  authorName: string;
+  authorEmail: string;
+  userRole: string;
+  userId: string;
+}): Promise<{
+  success: boolean;
+  application?: Application;
+  conflict?: boolean;
+  currentStatus?: string;
+  changedBy?: string;
+  error?: string;
+}> {
+  if (isCloudMode()) {
+    return cloudRepo.batchSendConfirm(params);
+  }
+
+  const db = getLocalDb();
+  const index = db.applications.findIndex((a) => a.id === params.applicationId);
+  if (index === -1) {
+    return { success: false, error: 'Application not found' };
+  }
+
+  const app = db.applications[index];
+
+  // Role check
+  if (params.userRole !== 'admin' && app.assigned_to && app.assigned_to !== params.userId) {
+    return { success: false, error: 'Unauthorized: Candidate is not assigned to you' };
+  }
+
+  const now = new Date().toISOString();
+
+  // Stage & concurrency check
+  if (params.mode === 'screening') {
+    if (app.status !== 'new') {
+      return {
+        success: false,
+        conflict: true,
+        currentStatus: app.status,
+        error: `Candidate status is already "${app.status}"`,
+      };
+    }
+
+    app.status = 'form_sent';
+    app.form_sent_at = now;
+    app.updated_at = now;
+
+    db.statusHistory.unshift({
+      id: `sh_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      application_id: params.applicationId,
+      old_status: 'new',
+      new_status: 'form_sent',
+      changed_by: params.authorName,
+      reason: 'Screening form sent via WhatsApp (batch)',
+      created_at: now,
+    });
+
+    if (!db.messagesLog) db.messagesLog = [];
+    db.messagesLog.unshift({
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      application_id: params.applicationId,
+      recipient_phone: params.recipientPhone,
+      template_type: 'screening_invite',
+      language: 'en',
+      channel: 'whatsapp',
+      message_body: params.messageBody || 'Screening invite sent via WhatsApp (batch)',
+      sent_at: now,
+    });
+
+    saveLocalDb(db);
+    await logAuditEvent(params.authorEmail, 'BATCH_SEND_CONFIRMED', 'application', params.applicationId, {
+      mode: 'screening',
+      recipientPhone: params.recipientPhone,
+    });
+  } else {
+    // Reminder mode
+    if (app.status !== 'form_sent' || app.replied_at) {
+      return {
+        success: false,
+        conflict: true,
+        currentStatus: app.status,
+        error: app.replied_at ? 'Candidate already replied' : `Candidate status is "${app.status}"`,
+      };
+    }
+
+    app.last_reminder_at = now;
+    app.updated_at = now;
+
+    db.statusHistory.unshift({
+      id: `sh_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      application_id: params.applicationId,
+      old_status: 'form_sent',
+      new_status: 'form_sent',
+      changed_by: params.authorName,
+      reason: 'Reminder sent via WhatsApp (batch)',
+      created_at: now,
+    });
+
+    if (!db.messagesLog) db.messagesLog = [];
+    db.messagesLog.unshift({
+      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      application_id: params.applicationId,
+      recipient_phone: params.recipientPhone,
+      template_type: 'reminder_24h',
+      language: 'en',
+      channel: 'whatsapp',
+      message_body: params.messageBody || 'Reminder sent via WhatsApp (batch)',
+      sent_at: now,
+    });
+
+    saveLocalDb(db);
+    await logAuditEvent(params.authorEmail, 'BATCH_REMINDER_CONFIRMED', 'application', params.applicationId, {
+      mode: 'reminder',
+      recipientPhone: params.recipientPhone,
+    });
+  }
+
+  const updated = await getApplicationById(params.applicationId);
+  return { success: true, application: updated || undefined };
+}
+
+export async function batchSendUndo(params: {
+  applicationId: string;
+  mode: 'screening' | 'reminder';
+  authorName: string;
+  authorEmail: string;
+  userRole: string;
+  userId: string;
+}): Promise<{
+  success: boolean;
+  application?: Application;
+  error?: string;
+}> {
+  if (isCloudMode()) {
+    return cloudRepo.batchSendUndo(params);
+  }
+
+  const db = getLocalDb();
+  const index = db.applications.findIndex((a) => a.id === params.applicationId);
+  if (index === -1) {
+    return { success: false, error: 'Application not found' };
+  }
+
+  const app = db.applications[index];
+
+  if (params.userRole !== 'admin' && app.assigned_to && app.assigned_to !== params.userId) {
+    return { success: false, error: 'Unauthorized: Candidate is not assigned to you' };
+  }
+
+  const now = new Date().toISOString();
+
+  if (params.mode === 'screening') {
+    app.status = 'new';
+    app.form_sent_at = null;
+    app.updated_at = now;
+
+    db.statusHistory.unshift({
+      id: `sh_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      application_id: params.applicationId,
+      old_status: 'form_sent',
+      new_status: 'new',
+      changed_by: params.authorName,
+      reason: 'Screening form batch send undone',
+      created_at: now,
+    });
+
+    saveLocalDb(db);
+    await logAuditEvent(params.authorEmail, 'BATCH_SEND_UNDONE', 'application', params.applicationId, {
+      mode: 'screening',
+    });
+  } else {
+    app.last_reminder_at = null;
+    app.updated_at = now;
+
+    db.statusHistory.unshift({
+      id: `sh_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      application_id: params.applicationId,
+      old_status: 'form_sent',
+      new_status: 'form_sent',
+      changed_by: params.authorName,
+      reason: 'Reminder batch send undone',
+      created_at: now,
+    });
+
+    saveLocalDb(db);
+    await logAuditEvent(params.authorEmail, 'BATCH_REMINDER_UNDONE', 'application', params.applicationId, {
+      mode: 'reminder',
+    });
+  }
+
+  const updated = await getApplicationById(params.applicationId);
+  return { success: true, application: updated || undefined };
+}
+
 // -------------------------------------------------------------
 // PUBLIC SCREENING FORM SUBMISSION
 // -------------------------------------------------------------

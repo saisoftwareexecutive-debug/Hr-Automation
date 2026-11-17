@@ -45,21 +45,29 @@ export function FollowupsClient({
     <div className="space-y-6">
       {/* Tab Switcher */}
       <div className="flex border-b border-border gap-6">
-        <button
-          type="button"
-          onClick={() => setActiveTab('noreply')}
-          className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${
-            activeTab === 'noreply'
-              ? 'border-brand text-brand'
-              : 'border-transparent text-secondary hover:text-primary'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          No Reply After 24 Hours
-          <span className="px-2 py-0.5 rounded-full text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold">
-            {overdueNoReply.length}
-          </span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('noreply')}
+            className={`pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition ${
+              activeTab === 'noreply'
+                ? 'border-brand text-brand'
+                : 'border-transparent text-secondary hover:text-primary'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            No Reply After 24 Hours
+            <span className="px-2 py-0.5 rounded-full text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold">
+              {overdueNoReply.length}
+            </span>
+          </button>
+          <Link
+            href="/batch-send?mode=reminder"
+            className="pb-3 text-xs font-semibold text-brand hover:text-brand-hover underline transition inline-flex items-center gap-1"
+          >
+            Send all reminders
+          </Link>
+        </div>
 
         <button
           type="button"
