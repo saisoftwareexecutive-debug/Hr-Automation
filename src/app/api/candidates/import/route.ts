@@ -22,8 +22,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const applications = body.applications as Application[];
     const filename = body.filename || 'import.xlsx';
-    const jobId = body.jobId || (applications[0]?.job_id) || '';
-    const jobTitle = body.jobTitle || (applications[0]?.job?.title) || 'Job Role';
+    const perJobCounts = body.perJobCounts as Record<string, number> | undefined;
 
     if (!applications || !Array.isArray(applications) || applications.length === 0) {
       return NextResponse.json(
@@ -44,6 +43,19 @@ export async function POST(req: NextRequest) {
 
     await saveImportedApplications(applications);
 
+    // Compute title summary across jobs
+    let jobTitle = body.jobTitle;
+    let jobId = body.jobId;
+
+    if (!jobTitle && perJobCounts && Object.keys(perJobCounts).length > 0) {
+      const parts = Object.entries(perJobCounts).map(([title, cnt]) => `${title} (${cnt})`);
+      jobTitle = parts.join(', ');
+      jobId = applications[0]?.job_id || 'multi_job';
+    } else {
+      jobTitle = jobTitle || (applications[0]?.job?.title) || 'Job Role';
+      jobId = jobId || (applications[0]?.job_id) || 'single_job';
+    }
+
     const batch: ImportBatch = {
       id: batchId,
       filename,
@@ -60,6 +72,7 @@ export async function POST(req: NextRequest) {
       count: applications.length,
       batchId,
       batch,
+      perJobCounts: perJobCounts || { [jobTitle]: applications.length },
       message: `Successfully imported and saved ${applications.length} candidates.`,
     });
   } catch (err: any) {
@@ -91,7 +104,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({
       success: result.success,
       count: result.count,
-      message: `Successfully undone import batch: removed ${result.count} candidates.`,
+      hasActiveActivity: result.hasActiveActivity,
+      message: `Successfully undone import batch: removed ${result.count} application(s).`,
     });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

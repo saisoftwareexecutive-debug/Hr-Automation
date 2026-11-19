@@ -33,6 +33,8 @@ interface CandidateTableClientProps {
   currentUser?: { userId: string; email: string; name: string; role: UserRole };
   initialJobId?: string;
   initialStatus?: string;
+  initialBatchId?: string;
+  importBatches?: any[];
 }
 
 export function CandidateTableClient({
@@ -42,11 +44,14 @@ export function CandidateTableClient({
   currentUser,
   initialJobId = '',
   initialStatus = 'all',
+  initialBatchId = '',
+  importBatches = [],
 }: CandidateTableClientProps) {
   const [applications, setApplications] = useState<Application[]>(initialApplications || []);
   const [search, setSearch] = useState('');
   const [jobFilter, setJobFilter] = useState(initialJobId || '');
   const [statusFilter, setStatusFilter] = useState(initialStatus || 'all');
+  const [batchFilter, setBatchFilter] = useState(initialBatchId || '');
   const [scoreFilter, setScoreFilter] = useState('all'); // all, 85, 70, 50
   const [assigneeFilter, setAssigneeFilter] = useState('all'); // all, me, unassigned, or userId
   const [sortField, setSortField] = useState<'score' | 'name' | 'date'>('score');
@@ -84,6 +89,9 @@ export function CandidateTableClient({
         if (!app) return false;
         // Job Filter
         if (jobFilter && app.job_id !== jobFilter) return false;
+
+        // Batch Filter
+        if (batchFilter && app.batch_id !== batchFilter) return false;
 
         // Status Filter
         if (statusFilter && statusFilter !== 'all' && app.status !== statusFilter) return false;
@@ -413,6 +421,22 @@ export function CandidateTableClient({
               {jobs.map((j) => (
                 <option key={j.id} value={j.id}>
                   {j.title}, {j.city}{j.location ? ` (${j.location})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Import Batch Filter */}
+          <div>
+            <select
+              value={batchFilter}
+              onChange={(e) => setBatchFilter(e.target.value)}
+              className="w-full text-xs rounded-xl border border-border py-2.5 px-3 bg-surface text-primary focus:ring-2 focus:ring-brand font-semibold"
+            >
+              <option value="">All Import Batches</option>
+              {importBatches.map((b: any) => (
+                <option key={b.id} value={b.id}>
+                  {b.filename} ({new Date(b.imported_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })})
                 </option>
               ))}
             </select>

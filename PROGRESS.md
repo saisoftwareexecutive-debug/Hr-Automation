@@ -13,16 +13,26 @@
 ---
 
 **Company:** Chhatrapati Shivaji’s Creative Solutions  
-**Last updated:** 2026-11-17 12:45 IST  
-**Backup:** HR AUTOMATION BACKUP 8 ✅  
+**Last updated:** 2026-11-19 21:45 IST  
+**Backup:** backups/hireflow_db_backup_2026-11-19T15-07-16-944Z.json & backups/supabase_backup_2026-11-19T15-07-16-944Z.json ✅  
 **Repository:** https://github.com/saisoftwareexecutive-debug/Hr-Automation.git (main)  
-**Tests:** 88/88 passing across 12 test files (`npm test`) ✅  
+**Tests:** 109/109 passing across 13 test files (`npm test`) ✅  
 **Guard:** 0 leaks or prohibited files tracked (`npm run guard`) ✅  
 **Build:** Passes cleanly (`npm run build` — 30/30 routes generated) ✅  
 
 ---
 
 ## 🚧 Active Unfinished Tasks (In Progress)
+- [x] **D1**: Multi-sheet auto-detection and smart candidate sheet scoring (`Applicants` over `Job Description`).
+- [x] **D2**: Mode switcher: "All rows go to one job" vs "Read the job from my Excel column".
+- [x] **D3**: Smart Job Matching table with exact, normalized, token overlap (>=80%), and manual assignment/skip options.
+- [x] **D4**: Robust Experience parser ("Fresher"=0, months, years, ranges) and Salary parser (monthly INR, LPA, ranges, k).
+- [x] **D5**: Fair hiring column detection (auto-ignore gender, age, religion, photo, marital status).
+- [x] **D6**: Import Wizard UI overhaul: Collapsible Job Details card, smart column mapping, preview table with raw vs parsed badges, success screen with direct actions.
+- [x] **D7**: Pipeline & Candidate directory integration: Instant `onChange` job filter, batch banner with formatted timestamp and "(Show everyone)", and "New import" tags.
+- [x] **D8**: On-page Safe Undo Import functionality with batch tracking and orphan candidate cleanup.
+- [x] **D9**: Step 0 Safety Backup & Step 1 Root Cause Analysis completed.
+- [ ] **D10**: Apply database repairs for damaged import batches (Awaiting user approval on DRY RUN report).
 - [x] **A0**: Add `description` text column and allow null salary in DB schema and types (Migration 005).
 - [x] **A1**: Create Health Coordinator (Hospital Coordinator) job (Pan India, Rs 12,000-15,000, food/acc/travel) in local & live DB.
 - [x] **A2**: Create Medical Coordination Officer (MCO) job (unbiased, zero gender clause) from MCO JD in local & live DB.

@@ -1,6 +1,6 @@
 import React from 'react';
 import { requireUser } from '@/lib/auth';
-import { getCandidates, getJobs, getUsers } from '@/lib/db';
+import { getCandidates, getJobs, getUsers, getImportBatches } from '@/lib/db';
 import { CandidateTableClient } from './CandidateTableClient';
 import { COMPANY_NAME } from '@/lib/brand';
 
@@ -9,17 +9,21 @@ export const dynamic = 'force-dynamic';
 export default async function CandidatesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ job?: string; status?: string }> | { job?: string; status?: string };
+  searchParams?:
+    | Promise<{ job?: string; status?: string; batch?: string }>
+    | { job?: string; status?: string; batch?: string };
 }) {
   const session = await requireUser('/candidates');
   const resolvedParams = searchParams ? await Promise.resolve(searchParams) : {};
   const selectedJobId = resolvedParams.job || '';
   const initialStatus = resolvedParams.status || 'all';
+  const selectedBatchId = resolvedParams.batch || '';
 
   const jobs = (await getJobs()) || [];
   const applications = (await getCandidates({ jobId: selectedJobId || undefined, status: initialStatus })) || [];
   const allUsers = (await getUsers()) || [];
   const hrUsers = allUsers.filter((u) => u.is_active);
+  const batches = (await getImportBatches()) || [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -41,6 +45,8 @@ export default async function CandidatesPage({
         currentUser={session}
         initialJobId={selectedJobId}
         initialStatus={initialStatus}
+        initialBatchId={selectedBatchId}
+        importBatches={batches}
       />
     </div>
   );

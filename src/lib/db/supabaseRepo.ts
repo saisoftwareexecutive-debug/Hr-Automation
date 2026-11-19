@@ -707,7 +707,20 @@ export async function saveImportedApplications(apps: Application[]): Promise<voi
       updated_at: now,
     }));
 
-    await supabase.from('applications').upsert(applicationRows, { onConflict: 'id' });
+    const { error: appErr } = await supabase.from('applications').upsert(applicationRows, { onConflict: 'id' });
+    if (appErr) {
+      if (appErr.message?.includes('last_reminder_at') || appErr.message?.includes('column')) {
+        const fallbackRows = applicationRows.map(({ last_reminder_at, ...rest }) => rest);
+        const { error: fallbackErr } = await supabase.from('applications').upsert(fallbackRows, { onConflict: 'id' });
+        if (fallbackErr) {
+          console.error('Supabase saveImportedApplications fallback error:', fallbackErr);
+          throw fallbackErr;
+        }
+      } else {
+        console.error('Supabase saveImportedApplications error:', appErr);
+        throw appErr;
+      }
+    }
   }
 }
 
@@ -1504,26 +1517,73 @@ export async function recordImportBatch(batch: ImportBatch): Promise<void> {
 export async function deleteImportBatch(
   batchId: string,
   adminEmail: string
-): Promise<{ success: boolean; deletedCount: number; error?: string }> {
+): Promise<{ success: boolean; deletedCount: number; hasActiveActivity?: boolean; error?: string }> {
   const supabase = getClient();
   const { data: apps } = await supabase
     .from('applications')
-    .select('id, candidate_id')
+    .select('id, candidate_id, status, form_sent_at, call_outcome')
     .eq('batch_id', batchId);
 
   const deletedCount = (apps || []).length;
-  if (deletedCount > 0) {
-    const candidateIds = Array.from(new Set(apps!.map((a) => a.candidate_id)));
-    await supabase.from('candidates').delete().in('id', candidateIds);
+  let hasActiveActivity = false;
+
+  if (apps && apps.length > 0) {
+    hasActiveActivity = apps.some(
+      (a) => a.status !== 'new' || Boolean(a.form_sent_at) || Boolean(a.call_outcome)
+    );
+
+    const appIds = apps.map((a) => a.id);
+    const candidateIds = Array.from(new Set(apps.map((a) => a.candidate_id)));
+
+    // 1. Delete associated dependent records
+    await supabase.from('form_answers').delete().in('application_id', appIds);
+    await supabase.from('candidate_notes').delete().in('application_id', appIds);
+    await supabase.from('application_status_history').delete().in('application_id', appIds);
+    await supabase.from('messages_log').delete().in('application_id', appIds);
+
+    // 2. Delete the batch applications
+    await supabase.from('applications').delete().in('id', appIds);
+
+    // 3. For each candidate, check if they have any remaining applications
+    for (const cId of candidateIds) {
+      const { count } = await supabase
+        .from('applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('candidate_id', cId);
+
+      if (!count || count === 0) {
+        await supabase.from('candidates').delete().eq('id', cId);
+      }
+    }
   }
 
+  // Also clean up any orphan candidates created specifically with this batch_id
+  const { data: orphanCands } = await supabase
+    .from('candidates')
+    .select('id')
+    .eq('batch_id', batchId);
+
+  if (orphanCands && orphanCands.length > 0) {
+    for (const cand of orphanCands) {
+      const { count } = await supabase
+        .from('applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('candidate_id', cand.id);
+      if (!count || count === 0) {
+        await supabase.from('candidates').delete().eq('id', cand.id);
+      }
+    }
+  }
+
+  // 4. Delete the import batch entry
   await supabase.from('import_batches').delete().eq('id', batchId);
 
   await logAuditEvent(adminEmail, 'IMPORT_BATCH_UNDONE', 'import_batch', batchId, {
     deletedApplicationsCount: deletedCount,
+    hasActiveActivity,
   });
 
-  return { success: true, deletedCount };
+  return { success: true, deletedCount, hasActiveActivity };
 }
 
 // -------------------------------------------------------------

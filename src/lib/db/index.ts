@@ -1565,27 +1565,37 @@ export async function recordImportBatch(batch: ImportBatch): Promise<void> {
 export async function deleteImportBatch(
   batchId: string,
   adminEmail: string
-): Promise<{ success: boolean; count: number }> {
+): Promise<{ success: boolean; count: number; hasActiveActivity?: boolean }> {
   if (isCloudMode()) {
     const res = await cloudRepo.deleteImportBatch(batchId, adminEmail);
-    return { success: res.success, count: res.deletedCount };
+    return { success: res.success, count: res.deletedCount, hasActiveActivity: res.hasActiveActivity };
   }
   const db = getLocalDb();
   const batchIndex = (db.importBatches || []).findIndex((b) => b.id === batchId);
   const batch = batchIndex !== -1 ? db.importBatches![batchIndex] : null;
 
-  const deletedCandidates = db.candidates.filter((c) => c.batch_id === batchId);
-  const candIds = new Set(deletedCandidates.map((c) => c.id));
-
-  const deletedApps = db.applications.filter((a) => a.batch_id === batchId || candIds.has(a.candidate_id));
+  const deletedApps = db.applications.filter((a) => a.batch_id === batchId);
   const appIds = new Set(deletedApps.map((a) => a.id));
 
-  db.candidates = db.candidates.filter((c) => c.batch_id !== batchId);
-  db.applications = db.applications.filter((a) => a.batch_id !== batchId && !candIds.has(a.candidate_id));
+  const hasActiveActivity = deletedApps.some(
+    (a) => a.status !== 'new' || Boolean(a.form_sent_at) || Boolean(a.call_outcome)
+  );
+
+  // Remove applications belonging to this batch
+  db.applications = db.applications.filter((a) => a.batch_id !== batchId);
   db.formAnswers = (db.formAnswers || []).filter((fa) => !appIds.has(fa.application_id));
-  db.candidateNotes = (db.candidateNotes || []).filter((cn) => !appIds.has(cn.application_id) && !candIds.has(cn.candidate_id));
+  db.candidateNotes = (db.candidateNotes || []).filter((cn) => !appIds.has(cn.application_id));
   db.statusHistory = (db.statusHistory || []).filter((sh) => !appIds.has(sh.application_id));
   db.messagesLog = (db.messagesLog || []).filter((ml) => !appIds.has(ml.application_id));
+
+  // Remove candidates ONLY if they have no remaining applications
+  const remainingCandidateIds = new Set(db.applications.map((a) => a.candidate_id));
+  const removedCandidates = db.candidates.filter(
+    (c) => c.batch_id === batchId && !remainingCandidateIds.has(c.id)
+  );
+  db.candidates = db.candidates.filter(
+    (c) => !(c.batch_id === batchId && !remainingCandidateIds.has(c.id))
+  );
 
   if (batchIndex !== -1) {
     db.importBatches!.splice(batchIndex, 1);
@@ -1596,11 +1606,12 @@ export async function deleteImportBatch(
   await logAuditEvent(adminEmail, 'IMPORT_BATCH_UNDONE', 'import', batchId, {
     batchId,
     filename: batch?.filename,
-    candidatesRemoved: deletedCandidates.length,
+    candidatesRemoved: removedCandidates.length,
     applicationsRemoved: deletedApps.length,
+    hasActiveActivity,
   });
 
-  return { success: true, count: deletedCandidates.length };
+  return { success: true, count: deletedApps.length, hasActiveActivity };
 }
 
 // -------------------------------------------------------------

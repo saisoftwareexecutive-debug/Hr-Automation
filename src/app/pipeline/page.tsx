@@ -1,23 +1,29 @@
 import React from 'react';
 import { requireUser } from '@/lib/auth';
-import { getCandidates, getJobs, getUsers } from '@/lib/db';
+import { getCandidates, getJobs, getUsers, getImportBatches } from '@/lib/db';
 import { KanbanBoardClient } from './KanbanBoardClient';
+import { PipelineJobFilter } from './PipelineJobFilter';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PipelinePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ job?: string }>;
+  searchParams?: Promise<{ job?: string; batch?: string }> | { job?: string; batch?: string };
 }) {
   const session = await requireUser('/pipeline');
-  const resolvedParams = searchParams ? await searchParams : {};
+  const resolvedParams = searchParams ? await Promise.resolve(searchParams) : {};
   const selectedJobId = resolvedParams.job;
+  const selectedBatchId = resolvedParams.batch;
 
   const jobs = await getJobs();
   const applications = await getCandidates({ jobId: selectedJobId });
   const allUsers = await getUsers();
   const hrUsers = allUsers.filter((u) => u.is_active);
+
+  // Fetch batches for label display if batch is selected
+  const batches = await getImportBatches();
+  const currentBatch = selectedBatchId ? batches.find((b) => b.id === selectedBatchId) : null;
 
   return (
     <div className="h-[calc(100vh-100px)] flex flex-col px-4 sm:px-6 lg:px-8 py-6 space-y-4">
@@ -31,31 +37,12 @@ export default async function PipelinePage({
           </p>
         </div>
 
-        {/* Job selector */}
-        <form method="GET" action="/pipeline" className="flex items-center gap-2">
-          <label htmlFor="pipeline-job" className="text-xs font-semibold text-secondary">
-            Filter Job:
-          </label>
-          <select
-            id="pipeline-job"
-            name="job"
-            defaultValue={selectedJobId || ''}
-            className="text-xs rounded-lg border-border border py-1.5 px-3 bg-input-bg text-primary shadow-xs font-medium focus:ring-2 focus:ring-brand"
-          >
-            <option value="">All Jobs ({jobs.length})</option>
-            {jobs.map((job) => (
-              <option key={job.id} value={job.id}>
-                {job.title}, {job.city}{job.location ? ` (${job.location})` : ''}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="px-3 py-1.5 text-xs font-semibold text-secondary bg-surface-raised hover:bg-surface-hover border border-border rounded-lg transition"
-          >
-            Apply
-          </button>
-        </form>
+        {/* Job selector with immediate onChange */}
+        <PipelineJobFilter
+          jobs={jobs}
+          selectedJobId={selectedJobId}
+          selectedBatchId={selectedBatchId}
+        />
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden">
@@ -65,6 +52,8 @@ export default async function PipelinePage({
           users={hrUsers}
           currentUser={session}
           selectedJobId={selectedJobId}
+          selectedBatchId={selectedBatchId}
+          batchMetadata={currentBatch}
         />
       </div>
     </div>
